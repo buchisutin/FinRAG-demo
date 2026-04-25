@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinRAG</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/assets/shell.css" />
+    <style>
+        :root {
+            --bg-app:        #EAE7E0;
+            --bg-sidebar:    #F2F0EC;
+            --bg-panel:      #F2F0EC;
+            --bg-hover:      #E6E3DC;
+            --bg-gray-layer: #E6E3DC;
+            --bg-sources:    #F2F0EC;
+            --border:        #D4D0C8;
+            --border-subtle: #DED9D0;
+            --accent:        #2C2A24;
+            --accent-light:  #E6E3DC;
+            --accent-muted:  #A09890;
+            --accent-dark:   #1C1A16;
+            --text-primary:  #1C1A16;
+            --text-secondary:#4A4640;
+            --text-muted:    #A09890;
+            --success:       #5C7A58;
+            --success-light: #D6E3D4;
+            --warning:       #8A7230;
+            --warning-light: #F0E8D4;
+            --danger:        #8C4040;
+            --danger-light:  #F0E2E2;
+            --shadow-sm:     none;
+            --shadow-md:     none;
+            --r-sm: 6px;
+            --r-md: 10px;
+            --r-lg: 14px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; box-shadow: none !important; }
+        body {
+            font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+            font-weight: 400;
+            color: var(--text-primary);
+            background-color: var(--bg-app);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            font-size: 14px;
+        }
+        button, input, textarea, select { font-family: inherit; font-size: inherit; outline: none; border: none; background: none; }
+        button { cursor: pointer; color: inherit; }
+        .font-mono { font-family: "JetBrains Mono", Consolas, monospace; }
+        .fw-500 { font-weight: 500; }
+        .card { background: var(--bg-panel); border: 0.5px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); }
+        .text-muted { color: var(--text-muted); }
+
+        /* Layout */
+        .sidebar {
+            width: 220px;
+            background: #E2DED6;
+            border-radius: 12px;
+            margin: 10px 0 10px 10px;
+            border: none;
+            border-right: none;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        .page-body,
+        .chat-main,
+        .main-content {
+            background: #EAE7E0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-width: 0;
+        }
+        .right-panel {
+            width: 240px;
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 12px;
+            margin: 10px 10px 10px 0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .right-panel.collapsed { display: none; }
+
+        /* Sidebar */
+        .sidebar-header { padding: 20px 16px 16px; display: flex; flex-direction: column; gap: 12px; border-bottom: 0.5px solid var(--border-subtle); }
+        .sidebar-top { display: flex; align-items: center; justify-content: space-between; }
+        .sys-title { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+        .admin-link {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 0;
+            border: none;
+            background: none;
+            transition: color 0.15s;
+        }
+        .admin-link:hover { color: var(--accent); background: none; }
+        .btn-new-chat {
+            background: #2C2A24;
+            color: #F2F0EC;
+            padding: 9px 12px;
+            border-radius: var(--r-md);
+            text-align: center;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-new-chat:hover { background: #1C1A16; }
+
+        .session-list { flex: 1; overflow-y: auto; padding: 12px 0; display: flex; flex-direction: column; gap: 16px; }
+        .session-group { display: flex; flex-direction: column; gap: 4px; }
+        .group-title { padding: 0 16px; font-size: 12px; color: var(--text-muted); font-weight: 500; }
+        .session-item { padding: 10px 16px; margin: 0 8px; border-radius: var(--r-sm); cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-left: 2px solid transparent; }
+        .session-item:hover { background: var(--bg-hover); }
+        .session-item.active { background: var(--bg-hover); border-left-color: var(--accent); }
+        .session-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 8px; }
+        .session-time { font-size: 12px; color: var(--text-muted); }
+        .session-main { display: flex; align-items: center; min-width: 0; flex: 1; }
+        .session-actions { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; }
+        .session-delete {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            opacity: 0;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .session-item:hover .session-delete { opacity: 0; }
+        .session-item.active .session-delete { opacity: 1; }
+        .session-delete:hover { background: var(--danger-light); color: var(--danger); }
+
+        .user-profile { padding: 16px; border-top: 0.5px solid var(--border-subtle); display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 32px; height: 32px; background: var(--accent-muted); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--bg-panel); font-weight: 500; }
+
+        /* Main Content */
+        .status-strip { padding:10px 20px; display:flex; align-items:center; gap:8px; border-bottom: 0.5px solid var(--border-subtle); }
+        #empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            --accent: #8B4513;
+            --accent-muted: #B8784A;
+            --text-primary: #2C2A24;
+            --text-muted: #9A9287;
+        }
+        .empty-title { font-size: 24px; font-weight: 500; color: var(--text-secondary); margin-bottom: 32px; }
+        .hero-kicker {
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: .1em;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .hero-title {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.35;
+            text-align: center;
+        }
+        .hero-accent {
+            color: var(--accent);
+        }
+        .hero-features {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .hero-feature {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .hero-feature svg {
+            color: var(--accent-muted);
+            flex-shrink: 0;
+        }
+        .hero-example-title {
+            font-size: 10px;
+            color: #B8B0A8;
+            letter-spacing: .06em;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .suggestion-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; max-width: 900px; width: 100%; }
+        @media (max-width: 1024px) {
+            .suggestion-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 640px) {
+            .suggestion-grid { grid-template-columns: 1fr; }
+        }
+        .suggestion-card {
+            padding: 12px 14px;
+            background: var(--bg-panel);
+            border-radius: 10px;
+            border: none;
+            box-shadow: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            transition: background 0.15s;
+        }
+        .suggestion-card:hover { background: var(--bg-hover); }
+        .example-tag {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+        .example-question {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        .example-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        #chat-container { flex: 1; overflow-y: auto; padding: 24px; display: none; flex-direction: column; gap: 24px; }
+
+        .message-row { display: flex; width: 100%; }
+        .message-row.user { justify-content: flex-end; }
+
+        .bubble { max-width: 70%; padding: 12px 16px; line-height: 1.5; word-break: break-word; }
+        .bubble-user { background: #2C2A24; color: #F2F0EC; border-radius: var(--r-lg) var(--r-lg) 4px var(--r-lg); }
+        .bubble-ai { background: var(--bg-panel); color: var(--text-primary); border: 0.5px solid var(--border); box-shadow: var(--shadow-sm); border-radius: 4px var(--r-lg) var(--r-lg) var(--r-lg); }
+
+        .ai-footer { margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--border-subtle); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; }
+        .badge { padding: 2px 6px; border-radius: var(--r-sm); background: var(--bg-gray-layer); color: var(--text-secondary); display: inline-flex; align-items: center; }
+        .btn-feedback { padding: 2px 4px; border-radius: var(--r-sm); cursor: pointer; transition: background 0.2s; }
+        .btn-feedback:hover { background: var(--bg-hover); }
+        .btn-sources-toggle { color: var(--accent); font-weight: 500; cursor: pointer; user-select: none; }
+
+        .sources-area { display: none; margin-top: 12px; gap: 8px; flex-direction: column; }
+        .sources-area.open { display: flex; }
+        .source-card { background: var(--bg-sources); border: 0.5px solid var(--border); border-radius: var(--r-md); padding: 10px 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .source-card:hover { filter: brightness(0.97); }
+        .source-icon { width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--bg-panel); font-weight: 500; }
+        .source-icon.pdf { background: var(--danger); }
+        .source-icon.url { background: var(--accent-dark); }
+        .source-info { flex: 1; overflow: hidden; }
+        .source-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+        .source-domain { font-size: 11px; color: var(--text-muted); }
+        .source-score { color: var(--success); font-size: 12px; }
+
+        .clarify-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+        .clarify-option { background: var(--bg-app); border: 0.5px solid var(--border); border-radius: var(--r-sm); padding: 10px; cursor: pointer; font-size: 13px; }
+        .clarify-option:hover { background: var(--accent-light); border-color: var(--accent); }
+
+        .cursor { display: inline-block; width: 6px; height: 14px; background: var(--accent); vertical-align: middle; animation: blink 1s step-end infinite; margin-left: 4px; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* Input Area */
+        .input-wrapper { padding: 0 24px 24px; }
+        .input-box { background: var(--bg-panel); border: 0.5px solid var(--border); border-radius: var(--r-lg); display: flex; flex-direction: column; padding: 12px 16px; transition: border-color 0.2s; }
+        .input-box:focus-within { border-color: var(--accent-muted); }
+        .input-row { display: flex; gap: 12px; align-items: flex-end; }
+        .btn-attach {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-attach:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .btn-attach.has-image { color: var(--accent); }
+        .img-preview-strip {
+            display: flex;
+            gap: 8px;
+            padding: 0 2px 10px;
+            flex-wrap: wrap;
+        }
+        .img-thumb {
+            width: 52px;
+            height: 52px;
+            border-radius: 8px;
+            border: 0.5px solid var(--border);
+            position: relative;
+            overflow: visible;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .img-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+        }
+        .img-thumb-remove {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--danger);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: none;
+            flex-shrink: 0;
+        }
+        .img-thumb-remove svg { width: 8px; height: 8px; }
+        .bubble-img img {
+            max-width: 220px;
+            max-height: 160px;
+            border-radius: 10px 10px 2px 10px;
+            display: block;
+            border: 0.5px solid var(--border);
+        }
+        textarea { flex: 1; resize: none; max-height: 120px; min-height: 20px; line-height: 20px; color: var(--text-primary); }
+        textarea::placeholder { color: var(--text-muted); }
+        .btn-send {
+            background: #2C2A24;
+            color: #F2F0EC;
+            width: 32px;
+            height: 32px;
+            border-radius: var(--r-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .btn-send:hover { background: #1C1A16; }
+        .btn-send:disabled { background: var(--bg-gray-layer); color: var(--text-muted); cursor: not-allowed; }
+
+        /* Right Panel */
+        .right-header { padding: 16px; font-weight: 500; border-bottom: 0.5px solid var(--border-subtle); display: flex; justify-content: space-between; }
+        .btn-close-panel { color: var(--text-muted); cursor: pointer; }
+        .right-content { padding: 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+        .toast { background: var(--bg-panel); border: 0.5px solid var(--danger); color: var(--danger); padding: 10px 16px; border-radius: var(--r-md); box-shadow: var(--shadow-md); font-size: 13px; opacity: 0; animation: fade-in-out 3s ease forwards; }
+        @keyframes fade-in-out { 0% { opacity: 0; transform: translateY(-10px); } 10% { opacity: 1; transform: translateY(0); } 90% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-10px); } }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-top">
+                <div>
+                    <div class="sys-title">投研助手</div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">
+                        Powered by FinRAG
+                    </div>
+                </div>
+                <a class="admin-link" href="/knowledge.html">管理后台 →</a>
+            </div>
+            <button class="btn-new-chat" id="btn-new-chat">+ 新建对话</button>
+        </div>
+        <div class="session-list" id="session-list"></div>
+        <div class="user-profile">
+            <div class="avatar">U</div>
+            <div class="fw-500">User_01</div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="empty-state">
+            <div style="text-align:center; margin-bottom:32px;">
+                <div class="hero-kicker">投研知识库</div>
+                <div class="hero-title">
+                    深入每一份<span class="hero-accent">行研报告</span>
+                    <br>给你可问答的知识库
+                </div>
+                <div class="hero-features">
+                    <div class="hero-feature">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        东方财富研报数据库
+                    </div>
+                    <div class="hero-feature">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        覆盖科技、医药、新能源等行业
+                    </div>
+                    <div class="hero-feature">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                        答案附带原始报告引用
+                    </div>
+                </div>
+            </div>
+            <div style="width:100%; max-width:560px;">
+                <div class="hero-example-title">试试这些问题</div>
+                <div class="suggestion-grid" id="suggestion-grid"></div>
+            </div>
+        </div>
+
+        <div id="chat-container"></div>
+
+        <div class="input-wrapper">
+            <div class="input-box">
+                <div class="img-preview-strip" id="img-preview-strip" style="display:none;"></div>
+                <div class="input-row">
+                    <button class="btn-attach" id="btn-attach" title="上传图片">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path d="M14 8.5V11a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            <path d="M10 2h4v4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M14 2L8 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <input type="file" id="img-file-input" accept="image/*" style="display:none;">
+                    <textarea id="chat-input" rows="1" placeholder="试着问「分析2024年AI芯片行业的投资机会」…"></textarea>
+                    <button class="btn-send" id="btn-send">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+                <div class="img-hint" id="img-hint" style="display:none; font-size:10px; color:var(--text-muted); text-align:center; padding-top:6px;">
+                    支持 JPG、PNG、截图粘贴 · 单张最大 10MB
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <aside class="right-panel collapsed" id="right-panel">
+        <div class="right-header">
+            <span>引用知识源</span>
+            <span class="btn-close-panel" id="btn-close-panel">✕</span>
+        </div>
+        <div class="right-content" id="right-content">
+            <div class="text-muted" style="font-size: 12px; text-align: center; margin-top: 20px;">点击聊天中的来源标签查看详情</div>
+        </div>
+    </aside>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="/assets/api.js"></script>
+    <script src="/assets/shell.js"></script>
+    <script>
+        // Mock 对话数据（仅用于 demo 展示）
+        const MOCK_SESSIONS = [
+            {
+                id: "af6073f920da416da19f7c6cb03fe2c8",
+                title: "计算机行业Token暴增趋势讨论",
+                updated_at: "2026-04-25T10:38:45.392614+00:00",
+            },
+            {
+                id: "bbbc612e61664d898aa6600a053496c8",
+                title: "26年3月社零数据讨论",
+                updated_at: "2026-04-25T10:34:05.024955+00:00",
+            },
+            {
+                id: "d4fa2bd1815c4cc2b90ea552784ee99d",
+                title: "3月挖掘机销量数据讨论",
+                updated_at: "2026-04-25T10:36:13.116840+00:00",
+            },
+        ];
+
+        const MOCK_MESSAGES_MAP = {
+            "af6073f920da416da19f7c6cb03fe2c8": [
+                {
+                    id: 76,
+                    session_id: "af6073f920da416da19f7c6cb03fe2c8",
+                    role: "user",
+                    content: "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+                    created_at: "2026-04-25T10:37:50.969843+00:00",
+                },
+                {
+                    id: 77,
+                    session_id: "af6073f920da416da19f7c6cb03fe2c8",
+                    role: "assistant",
+                    content: "### 一、Token 暴增的趋势  \n\n- 近期国内日均 Token 调用量已突破 **140 万亿**，相比 2024 年初的约 **1000 亿**，增长了 **千倍以上**。  \n- 主要大模型（如豆包、字节跳动）日均 Token 使用量同样实现了数百倍至千倍的快速增长。  \n- 企业级 Token 消费进入规模化付费阶段，已有 **140 家** 企业客户累计调用量突破万亿，平台年度经常性收入实现 **60 倍** 的增长。  \n- 这种 Token 消耗的激增直接推动了算力需求的上升，形成了 \"Token 需求爆发 → 算力涨价 → 超节点部署 → 供给提升\" 的正向循环。\n\n### 二、分析师推荐关注的公司  \n\n- **国产 GPU**：寒武纪、海光信息  \n- **超节点整机**：中科曙光、浪潮信息、神州数码、拓维信息  \n- **算力租赁龙头**：协创数据、宏景科技、润建股份、利通电子、盈峰环境  \n- **核心配套**：华丰科技、杰华特、申菱环境、英维克、高澜股份、欧陆通、中恒电气  \n\n这些标的被视为受益于 Token 暴增带来的算力需求增长的关键企业。",
+                    created_at: "2026-04-25T10:38:25.530327+00:00",
+                },
+                {
+                    id: 78,
+                    session_id: "af6073f920da416da19f7c6cb03fe2c8",
+                    role: "user",
+                    content: "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+                    created_at: "2026-04-25T10:38:38.059717+00:00",
+                },
+                {
+                    id: 79,
+                    session_id: "af6073f920da416da19f7c6cb03fe2c8",
+                    role: "assistant",
+                    content: "### 一、Token 暴增的趋势  \n\n- 近期国内日均 Token 调用量已突破 **140 万亿**，相比 2024 年初的约 **1000 亿**，增长了 **千倍以上**。  \n- 主要大模型（如豆包、字节跳动）日均 Token 使用量同样实现了数百倍至千倍的快速增长。  \n- 企业级 Token 消费进入规模化付费阶段，已有 **140 家** 企业客户累计调用量突破万亿，平台年度经常性收入实现 **60 倍** 的增长。  \n- 这种 Token 消耗的激增直接推动了算力需求的上升，形成了 \"Token 需求爆发 → 算力涨价 → 超节点部署 → 供给提升\" 的正向循环。\n\n### 二、分析师推荐关注的公司  \n\n- **国产 GPU**：寒武纪、海光信息  \n- **超节点整机**：中科曙光、浪潮信息、神州数码、拓维信息  \n- **算力租赁龙头**：协创数据、宏景科技、润建股份、利通电子、盈峰环境  \n- **核心配套**：华丰科技、杰华特、申菱环境、英维克、高澜股份、欧陆通、中恒电气  \n\n这些标的被视为受益于 Token 暴增带来的算力需求增长的关键企业。",
+                    created_at: "2026-04-25T10:38:45.392614+00:00",
+                },
+            ],
+            "bbbc612e61664d898aa6600a053496c8": [
+                {
+                    id: 72,
+                    session_id: "bbbc612e61664d898aa6600a053496c8",
+                    role: "user",
+                    content: "26年3月社零数据增速是多少，消费行业后续的政策催化剂有哪些？",
+                    created_at: "2026-04-25T10:33:39.250463+00:00",
+                },
+                {
+                    id: 73,
+                    session_id: "bbbc612e61664d898aa6600a053496c8",
+                    role: "assistant",
+                    content: "**26年3月社零数据增速**  \n- 社会消费品零售总额同比增长 **1.7%**（环比出现 1.1pct 的放缓）。\n\n---\n\n### 消费行业后续的政策催化剂\n\n1. **专项财政资金与国债支持**  \n   - 2026 年将安排 **超长期特别国债 2500 亿元**，用于支持消费品以旧换新。  \n   - 同时设立 **1000 亿元财政金融协同促内需专项资金**，加大对消费需求的财政拉动。\n\n2. **服务消费政策陆续出台**  \n   - \"十五五\"规划及 2026 年政府工作报告均把 **扩大内需、提升服务消费** 放在首位。  \n   - 相关政策包括对高技术、现代服务业的引导，以及对服务业质量提升的专项扶持。\n\n3. **《关于推进服务业扩能提质的意见》**（2026‑04‑21）  \n   - 目标到 2030 年服务业规模突破 **100 万亿元**，强调 **科技服务支撑、软件与信息服务创新**，为服务业提供长期增长动能。\n\n4. **消费补贴与稳收入政策**  \n   - 短期将通过 **补贴类政策**（如以旧换新补贴）刺激消费。  \n   - 中长期则侧重 **稳收入、提升居民消费信心** 的政策体系，帮助消费回暖进入螺旋上升阶段。\n\n5. **行业细分方向的政策倾斜**  \n   - 对 **新消费赛道**（潮玩、黄金珠宝、新茶饮等）以及 **顺周期赛道**（白酒、餐酒旅、服务消费公司）提供政策支持，形成差异化的增长驱动。\n\n这些政策组合形成了从财政资金、专项债务、宏观规划到行业细分的多层次催化体系，预计将在 2026 年后持续推动消费需求回升。",
+                    created_at: "2026-04-25T10:34:05.024955+00:00",
+                },
+            ],
+            "d4fa2bd1815c4cc2b90ea552784ee99d": [
+                {
+                    id: 74,
+                    session_id: "d4fa2bd1815c4cc2b90ea552784ee99d",
+                    role: "user",
+                    content: "3月挖掘机销量数据如何，工程机械行业当前的投资评级是什么？",
+                    created_at: "2026-04-25T10:35:30.716322+00:00",
+                },
+                {
+                    id: 75,
+                    session_id: "d4fa2bd1815c4cc2b90ea552784ee99d",
+                    role: "assistant",
+                    content: "## 3 月挖掘机销量概况  \n\n- **总销量**：2026 年 3 月挖掘机销量为 **37 402 台**。  \n- **同比增长**：较 2025 年同月增长 **26.40 %**。  \n- **环比增长**：较 2026 年 2 月环比提升 **117.13 %**。  \n\n### 细分市场  \n| 区域 | 销量（台） | 同比增速 | 环比增速 |\n|------|------------|----------|----------|\n| 国内 | 24 101 | 23.49 % | 256.79 % |\n| 出口 | 13 301 | 32.05 % | 27.03 % |\n\n- **出口占比**：约 **35.56 %**（出口 13 301 台 / 总销量 37 402 台）。  \n- **行业景气度**：2026 年第一季度累计销量 73 336 台，同比增长 19.49 %，显示行业整体回升。\n\n## 工程机械行业的投资评级现状  \n\n当前可用的材料仅提供了行业投资评级的定义（如\"强于大市\"\"同步大市\"\"弱于大市\"），但未给出针对工程机械行业的具体评级结论。因此，**没有可引用的明确评级** 可供报告。若需最新评级，请参考后续的行业研究报告或评级机构的最新发布。",
+                    created_at: "2026-04-25T10:36:13.116840+00:00",
+                },
+            ],
+        };
+
+        const Api = {
+            user: 'api_user',
+            _toSessionView(row) {
+                const updatedAt = row.updated_at || row.created_at;
+                const dt = new Date(updatedAt);
+                const valid = !Number.isNaN(dt.getTime());
+                const now = new Date();
+                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const msgDayStart = valid ? new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()) : todayStart;
+                const diffDays = Math.floor((todayStart.getTime() - msgDayStart.getTime()) / (24 * 60 * 60 * 1000));
+                let group = '更早';
+                if (diffDays <= 0) group = '今天';
+                else if (diffDays === 1) group = '昨天';
+                const time = valid
+                    ? dt.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+                    : '--:--';
+                return {
+                    id: row.id,
+                    title: row.title || '新对话',
+                    time,
+                    group,
+                    updated_at: updatedAt,
+                };
+            },
+            async getSessions() {
+                return MOCK_SESSIONS.map(item => this._toSessionView(item));
+            },
+            async createSession(title = '新对话') {
+                const newId = 'mock_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+                const newSession = {
+                    id: newId,
+                    title: title,
+                    updated_at: new Date().toISOString(),
+                };
+                MOCK_SESSIONS.unshift(newSession);
+                MOCK_MESSAGES_MAP[newId] = [];
+                return this._toSessionView(newSession);
+            },
+            async renameSession(sessionId, title) {
+                const session = MOCK_SESSIONS.find(s => s.id === sessionId);
+                if (session) session.title = title;
+                return this._toSessionView(session || { id: sessionId, title, updated_at: new Date().toISOString() });
+            },
+            async deleteSession(sessionId) {
+                const idx = MOCK_SESSIONS.findIndex(s => s.id === sessionId);
+                if (idx !== -1) {
+                    MOCK_SESSIONS.splice(idx, 1);
+                    delete MOCK_MESSAGES_MAP[sessionId];
+                }
+            },
+            async getMessages(sessionId) {
+                return MOCK_MESSAGES_MAP[sessionId] || [];
+            },
+            async getSampleQuestions() {
+                return EXAMPLE_QUESTIONS.map(q => q.question);
+            },
+            async getHealth() {
+                return { status: 'ok' };
+            },
+            async getKnowledgeBases() {
+                return [
+                    { id: 'tech', name: '科技', document_count: 1 },
+                    { id: 'medical', name: '医药', document_count: 1 },
+                    { id: 'energy', name: '新能源', document_count: 1 },
+                    { id: 'finance', name: '金融', document_count: 1 },
+                    { id: 'consumer', name: '消费', document_count: 1 },
+                ];
+            },
+            async getDecision(question) {
+                return { kb_id: null, kb_name: null, intent: null, route: 'qa' };
+            },
+            startChatSSE(question, sessionId, imageBase64 = null) {
+                // Demo 模式：返回模拟 SSE 流
+                const mockAnswer = "抱歉，Demo 模式下暂不支持实时对话。请在管理后台查看已生成的研报问答示例。";
+                const stream = {
+                    reader: null,
+                    cancel: () => {},
+                };
+                // 模拟异步返回
+                setTimeout(() => {
+                    if (window.__mockSSECallback) {
+                        window.__mockSSECallback(mockAnswer);
+                    }
+                }, 500);
+                return stream;
+            },
+            async submitFeedback() { return { success: true }; }
+        };
+
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerText = msg;
+            container.appendChild(toast);
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
+        }
+
+        const EXAMPLE_QUESTIONS = [
+            {
+                tag: "消费",
+                question: "26年3月社零数据增速是多少，消费行业后续的政策催化剂有哪些？",
+                sub: "社会零售总额趋势分析及政策影响评估",
+            },
+            {
+                tag: "新能源",
+                question: "3月挖掘机销量数据如何，工程机械行业当前的投资评级是什么？",
+                sub: "工程机械销售数据与行业投资评级展望",
+            },
+            {
+                tag: "科技",
+                question: "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+                sub: "AI时代下计算机产业链投资机会梳理",
+            },
+        ];
+
+        const SessionManager = {
+            currentSessionId: null,
+            sessions: [],
+            async init() {
+                try {
+                    this.sessions = await Api.getSessions();
+                    if (this.sessions.length > 0) {
+                        this.currentSessionId = this.sessions[0].id;
+                        // 如果有历史会话，立即加载该会话的聊天内容并切换到聊天状态
+                        UIController.switchToChatState();
+                        document.getElementById('chat-container').innerHTML = '';
+                        try {
+                            const messages = await Api.getMessages(this.currentSessionId);
+                            messages.forEach(msg => {
+                                if (msg.role === 'user') MessageRenderer.appendUser(msg.content);
+                                else MessageRenderer.appendAI(msg.content);
+                            });
+                            if (messages.length === 0) UIController.switchToEmptyState();
+                        } catch (err) {
+                            UIController.switchToEmptyState();
+                        }
+                    }
+                    this.renderList();
+                } catch (e) {
+                    showToast("加载会话失败");
+                }
+            },
+            async createNewSession(switchView = true) {
+                const created = await Api.createSession('新对话');
+                this.currentSessionId = created.id;
+                this.sessions.unshift(created);
+                this.renderList();
+                if (switchView) {
+                    UIController.switchToEmptyState();
+                }
+                // 清空聊天容器
+                document.getElementById('chat-container').innerHTML = '';
+                return created.id;
+            },
+            async switchSession(id) {
+                if (!id) return;
+                this.currentSessionId = id;
+                UIController.switchToChatState();
+                document.getElementById('chat-container').innerHTML = '';
+                try {
+                    const messages = await Api.getMessages(id);
+                    messages.forEach(msg => {
+                        if (msg.role === 'user') MessageRenderer.appendUser(msg.content);
+                        else MessageRenderer.appendAI(msg.content);
+                    });
+                    if (messages.length === 0) UIController.switchToEmptyState();
+                } catch (err) {
+                    showToast(`加载历史失败: ${err.message}`);
+                }
+                this.renderList();
+            },
+            async deleteSession(id) {
+                if (!id) return;
+                const target = this.sessions.find(item => item.id === id);
+                const title = target && target.title ? target.title : '该会话';
+                const ok = window.confirm(`确认删除会话「${title}」吗？此操作不可恢复。`);
+                if (!ok) return;
+
+                try {
+                    await Api.deleteSession(id);
+                    this.sessions = this.sessions.filter(item => item.id !== id);
+                    const wasCurrent = this.currentSessionId === id;
+                    if (wasCurrent) {
+                        if (this.sessions.length > 0) {
+                            await this.switchSession(this.sessions[0].id);
+                        } else {
+                            this.currentSessionId = null;
+                            UIController.switchToEmptyState();
+                            // 清空聊天容器
+                            document.getElementById('chat-container').innerHTML = '';
+                            this.renderList();
+                        }
+                    } else {
+                        this.renderList();
+                    }
+                    showToast("会话已删除");
+                } catch (err) {
+                    showToast(`删除失败: ${err.message}`);
+                }
+            },
+            async upsertFromQuestion(question) {
+                const short = question.length > 24 ? `${question.slice(0, 24)}...` : question;
+                try {
+                    this.sessions = await Api.getSessions();
+                } catch (_) {
+                    const current = this.sessions.find(item => item.id === this.currentSessionId);
+                    if (current && current.title === '新对话') {
+                        // 降级：仅当后端标题更新接口不可用时，前端使用截断标题兜底。
+                        try {
+                            const updated = await Api.renameSession(current.id, short);
+                            if (updated) {
+                                const idx = this.sessions.findIndex(item => item.id === current.id);
+                                if (idx >= 0) this.sessions[idx] = updated;
+                            }
+                        } catch (_) {}
+                    }
+                }
+                this.renderList();
+            },
+            renderList() {
+                const listEl = document.getElementById('session-list');
+                listEl.innerHTML = '';
+                
+                // 空会话列表引导
+                if (this.sessions.length === 0) {
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.style.padding = '40px 16px';
+                    emptyDiv.style.textAlign = 'center';
+                    emptyDiv.style.color = 'var(--text-muted)';
+                    emptyDiv.style.fontSize = '13px';
+                    emptyDiv.innerHTML = `
+                        <div style="margin-bottom: 8px;">暂无会话</div>
+                        <div style="font-size: 12px;">点击「新建对话」开始</div>
+                    `;
+                    listEl.appendChild(emptyDiv);
+                    return;
+                }
+                
+                const groups = {};
+                this.sessions.forEach(s => { if (!groups[s.group]) groups[s.group] = []; groups[s.group].push(s); });
+                for (const [groupName, items] of Object.entries(groups)) {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'session-group';
+                    groupDiv.innerHTML = `<div class="group-title">${groupName}</div>`;
+                    items.forEach(item => {
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = `session-item ${this.currentSessionId === item.id ? 'active' : ''}`;
+                        itemDiv.onclick = () => { this.switchSession(item.id); };
+                        itemDiv.innerHTML = `
+                            <div class="session-main">
+                                <div class="session-title">${item.title}</div>
+                                <div class="session-time">${item.time}</div>
+                            </div>
+                            <div class="session-actions">
+                                <button class="session-delete" title="删除会话">
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true" focusable="false">
+                                        <path d="M2 2L8 8M8 2L2 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        `;
+                        const deleteBtn = itemDiv.querySelector('.session-delete');
+                        if (deleteBtn) {
+                            deleteBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                this.deleteSession(item.id);
+                            };
+                        }
+                        groupDiv.appendChild(itemDiv);
+                    });
+                    listEl.appendChild(groupDiv);
+                }
+            }
+        };
+
+        const STRATEGY_LABEL_MAP = {
+            kb_search: '知识库检索',
+            directed_global_mix: '定向全局混合',
+            global: '全局检索',
+            directed: '定向检索',
+            hybrid: '混合检索',
+            directed_only: '定向检索',
+            global_only: '全局检索',
+            mix: '定向全局混合',
+            fallback: '全局检索',
+            clarify: '需要澄清',
+            system: '系统回答',
+            system_only: '系统回答',
+            vision_only: '视觉理解',
+            vision_kb: '视觉检索',
+            basic: '全局检索',
+            multiquery: '定向全局混合',
+        };
+
+        const MessageRenderer = {
+            container: document.getElementById('chat-container'),
+            renderMarkdown(text) {
+                const escaped = this.escapeHTML(String(text ?? ''));
+                return escaped
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\n/g, '<br/>');
+            },
+            appendUser(text) {
+                const row = document.createElement('div');
+                row.className = 'message-row user';
+                row.innerHTML = `<div class="bubble bubble-user">${this.escapeHTML(text)}</div>`;
+                this.container.appendChild(row);
+                this.scrollToBottom();
+            },
+            appendUserWithImage(text, imageDataUrl) {
+                const row = document.createElement('div');
+                row.className = 'message-row user';
+                const imgHtml = imageDataUrl ? `
+                    <div class="bubble-img">
+                        <img src="${imageDataUrl}" alt="上传图片">
+                    </div>
+                ` : '';
+                const textHtml = text ? `
+                    <div class="bubble bubble-user">${this.escapeHTML(text)}</div>
+                ` : '';
+                row.innerHTML = `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">${imgHtml}${textHtml}</div>`;
+                this.container.appendChild(row);
+                this.scrollToBottom();
+            },
+            appendAI(text) {
+                const row = document.createElement('div');
+                row.className = 'message-row ai';
+                row.innerHTML = `<div class="bubble bubble-ai"><div class="ai-content">${this.renderMarkdown(text)}</div></div>`;
+                this.container.appendChild(row);
+                this.scrollToBottom();
+            },
+            createAIMessageNode() {
+                const id = 'msg_' + Date.now();
+                const row = document.createElement('div');
+                row.className = 'message-row ai';
+                row.id = id;
+                row.innerHTML = `<div class="bubble bubble-ai"><div class="ai-content" data-raw=""><span class="cursor"></span></div></div>`;
+                this.container.appendChild(row);
+                this.scrollToBottom();
+                return id;
+            },
+            updateAIToken(msgId, token) {
+                const msgNode = document.getElementById(msgId);
+                if (!msgNode) return;
+                const contentNode = msgNode.querySelector('.ai-content');
+                const cursor = contentNode.querySelector('.cursor');
+                if (cursor) cursor.remove();
+                const previousRaw = contentNode.dataset.raw || '';
+                const nextRaw = previousRaw + token;
+                contentNode.dataset.raw = nextRaw;
+                contentNode.innerHTML = this.renderMarkdown(nextRaw);
+                contentNode.innerHTML += '<span class="cursor"></span>';
+                this.scrollToBottom();
+            },
+            setAIFinished(msgId) {
+                const msgNode = document.getElementById(msgId);
+                if (!msgNode) return;
+                const cursor = msgNode.querySelector('.cursor');
+                if (cursor) cursor.remove();
+            },
+            setAIMeta(msgId, meta) {
+                const msgNode = document.getElementById(msgId);
+                if (!msgNode) return;
+                const bubble = msgNode.querySelector('.bubble-ai');
+                const oldFooter = bubble.querySelector('.ai-footer');
+                if (oldFooter) oldFooter.remove();
+                const intentLabel = {
+                    unknown: '未知意图',
+                    knowledge: '知识库问答',
+                    system: '系统问题',
+                    query: '检索问答',
+                    chat: '闲聊',
+                }[meta.intent] || (meta.intent && meta.intent !== '-' ? meta.intent : '通用问答');
+                const routeKey = String(meta.route || '').trim();
+                const routeLabel = STRATEGY_LABEL_MAP[routeKey] || routeKey || '-';
+                const isVision = Boolean(meta.is_vision);
+                const footer = document.createElement('div');
+                footer.className = 'ai-footer';
+                if (isVision) {
+                    footer.innerHTML = `
+                        <span style="font-size:10px;padding:2px 6px;background:var(--accent-light);color:var(--accent-dark);border-radius:4px;">Vision</span>
+                        <span style="font-size:10px;color:var(--text-muted);">Qwen3-VL · ${meta.latency_ms}ms</span>
+                        <span style="font-size:10px; color:var(--text-muted);">·</span>
+                        <span style="font-size:10px; color:var(--text-muted);">策略: ${routeLabel}</span>
+                        <span class="btn-feedback" onclick="UIController.handleFeedback('${msgId}', 'up')">有帮助</span>
+                        <span class="btn-feedback" onclick="UIController.handleFeedback('${msgId}', 'down')">不准确</span>
+                    `;
+                } else {
+                    footer.innerHTML = `
+                        <span style="font-size:10px; color:var(--text-muted);">意图: ${intentLabel}</span>
+                        <span style="font-size:10px; color:var(--text-muted);">·</span>
+                        <span style="font-size:10px; color:var(--text-muted);">策略: ${routeLabel}</span>
+                        <span class="text-muted font-mono" style="margin-left:auto; font-size:10px;">${meta.latency_ms}ms</span>
+                        <span class="btn-feedback" onclick="UIController.handleFeedback('${msgId}', 'up')">有帮助</span>
+                        <span class="btn-feedback" onclick="UIController.handleFeedback('${msgId}', 'down')">不准确</span>
+                    `;
+                }
+                bubble.appendChild(footer);
+                this.scrollToBottom();
+            },
+            setAISources(msgId, sources) {
+                const msgNode = document.getElementById(msgId);
+                if (!msgNode) return;
+                const bubble = msgNode.querySelector('.bubble-ai');
+                const footer = bubble.querySelector('.ai-footer');
+                if (footer && sources.chunks && sources.chunks.length > 0) {
+                    const toggleBtn = document.createElement('span');
+                    toggleBtn.className = 'btn-sources-toggle';
+                    toggleBtn.innerText = `[引用 ${sources.chunks.length} 个来源]`;
+                    footer.insertBefore(toggleBtn, footer.querySelector('.font-mono'));
+                    const sourceArea = document.createElement('div');
+                    sourceArea.className = 'sources-area';
+                    sources.chunks.forEach(src => {
+                        const card = document.createElement('div');
+                        card.className = 'source-card';
+                        card.onclick = () => UIController.openRightPanel(src);
+                        card.innerHTML = `
+                            <div class="source-icon ${src.type.toLowerCase()}">${src.type}</div>
+                            <div class="source-info">
+                                <div class="source-title">${src.title}</div>
+                                <div class="source-domain" style="margin-top:2px;">
+                                    ${src.domain}
+                                    <span style="margin-left:8px; color:var(--success);" class="font-mono">相关度 ${src.score}</span>
+                                </div>
+                            </div>
+                        `;
+                        sourceArea.appendChild(card);
+                    });
+                    bubble.appendChild(sourceArea);
+                    toggleBtn.onclick = () => { sourceArea.classList.toggle('open'); this.scrollToBottom(); };
+                }
+            },
+            showClarification(msgId, options) {
+                const msgNode = document.getElementById(msgId);
+                if (!msgNode) return;
+                const bubble = msgNode.querySelector('.bubble-ai');
+                const grid = document.createElement('div');
+                grid.className = 'clarify-grid';
+                options.forEach(opt => {
+                    const btn = document.createElement('div');
+                    btn.className = 'clarify-option card';
+                    btn.innerText = opt;
+                    btn.onclick = () => { grid.style.opacity = '0.5'; grid.style.pointerEvents = 'none'; UIController.sendQuestion(opt); };
+                    grid.appendChild(btn);
+                });
+                bubble.appendChild(grid);
+                this.scrollToBottom();
+            },
+            scrollToBottom() { this.container.scrollTop = this.container.scrollHeight; },
+            escapeHTML(str) {
+                return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
+            }
+        };
+
+        const StreamHandler = {
+            isStreaming: false,
+            async startStream(question, domain, sessionId, imageBase64 = null) {
+                if (this.isStreaming) return;
+                this.isStreaming = true;
+                UIController.setSendButtonState(false);
+                const streamFallbackMessage = '服务中断，请重试。';
+                const msgId = MessageRenderer.createAIMessageNode();
+                const streamStartMs = Date.now();
+                let finalLatencyMs = 0;
+                let latestDecision = null;
+                let finished = false;
+                let eventSource = null;
+                const hasRenderedText = () => {
+                    const msgNode = document.getElementById(msgId);
+                    if (!msgNode) return false;
+                    const contentNode = msgNode.querySelector('.ai-content');
+                    if (!contentNode) return false;
+                    const raw = String(contentNode.dataset.raw || '').trim();
+                    if (raw) return true;
+                    const plain = String(contentNode.textContent || '').replace(/\s+/g, '').trim();
+                    return plain.length > 0;
+                };
+                const tryRecoverFromHistory = async () => {
+                    if (!sessionId) return false;
+                    try {
+                        const messages = await Api.getMessages(sessionId);
+                        if (!Array.isArray(messages) || messages.length < 2) return false;
+                        const last = messages[messages.length - 1];
+                        const prev = messages[messages.length - 2];
+                        const isCurrentQuestion = prev && prev.role === 'user' && prev.content === question;
+                        if (isCurrentQuestion && last && last.role === 'assistant' && last.content) {
+                            MessageRenderer.updateAIToken(msgId, String(last.content));
+                            return true;
+                        }
+                    } catch (_) {}
+                    return false;
+                };
+                const ensureFallbackVisible = async () => {
+                    const recovered = await tryRecoverFromHistory();
+                    if (!recovered && !hasRenderedText()) {
+                        MessageRenderer.updateAIToken(msgId, streamFallbackMessage);
+                    }
+                };
+                const renderMetaIfReady = () => {
+                    if (!latestDecision) return;
+                    const intentObj = latestDecision.intent || {};
+                    const intent = intentObj.intent_label || intentObj.intent_type || '-';
+                    const elapsedMs = Date.now() - streamStartMs;
+                    const strategy = String(latestDecision.strategy || '-');
+                    MessageRenderer.setAIMeta(msgId, {
+                        intent: String(intent),
+                        route: strategy,
+                        latency_ms: Number(finalLatencyMs || elapsedMs || 0),
+                        is_vision: strategy === 'vision_only' || strategy === 'vision_kb',
+                    });
+                };
+                const finish = () => {
+                    if (finished) return;
+                    finished = true;
+                    MessageRenderer.setAIFinished(msgId);
+                    this.isStreaming = false;
+                    UIController.setSendButtonState(true);
+                    Api.getSessions()
+                        .then(rows => {
+                            SessionManager.sessions = rows;
+                            SessionManager.renderList();
+                        })
+                        .catch(() => {});
+                };
+                try {
+                    const decisionPromise = Api.getDecision(question).catch(() => null);
+                    eventSource = Api.startChatSSE(question, sessionId, imageBase64);
+
+                    eventSource.onmessage = (evt) => {
+                        let payload = {};
+                        try {
+                            payload = JSON.parse(evt.data || '{}');
+                        } catch (_) {}
+                        const chunk = typeof payload.chunk === 'string' ? payload.chunk : '';
+                        if (chunk) MessageRenderer.updateAIToken(msgId, chunk);
+                        if (payload.done === true) {
+                            finalLatencyMs = Number(payload.total_latency_ms || payload.latency_ms || 0);
+                            renderMetaIfReady();
+                            eventSource.close();
+                            finish();
+                        }
+                    };
+                    eventSource.onerror = async () => {
+                        if (finished) return;
+                        eventSource.close();
+                        await ensureFallbackVisible();
+                        renderMetaIfReady();
+                        showToast("网络请求失败或流式中断，请检查网络连接后重试");
+                        finish();
+                    };
+
+                    const decision = await decisionPromise;
+                    if (decision) {
+                        latestDecision = decision;
+                        renderMetaIfReady();
+                        if (decision.strategy === 'clarify' && Array.isArray(decision.candidates) && decision.candidates.length) {
+                            MessageRenderer.showClarification(msgId, decision.candidates);
+                        }
+                    }
+                } catch (e) {
+                    showToast(`网络请求失败: ${e.message || '未知错误'}`);
+                    if (eventSource) eventSource.close();
+                    await ensureFallbackVisible();
+                    renderMetaIfReady();
+                    finish();
+                }
+            }
+        };
+
+        const UIController = {
+            inputEl: document.getElementById('chat-input'),
+            sendBtn: document.getElementById('btn-send'),
+            statusStripText: document.getElementById('status-strip-text'),
+            statusStripDot: document.getElementById('status-strip-dot'),
+            rightPanel: document.getElementById('right-panel'),
+            pendingImage: null,
+            async init() {
+                await SessionManager.init();
+                this.bindEvents();
+                await this.loadRuntimeStatus();
+                await this.loadSamples();
+            },
+            async loadRuntimeStatus() {
+                const [healthResult] = await Promise.allSettled([Api.getHealth()]);
+                const health = healthResult.status === 'fulfilled' ? healthResult.value : null;
+                const serviceOk = Boolean(health && health.status === 'ok');
+
+                if (this.statusStripText) {
+                    const serviceText = serviceOk ? '服务正常' : '服务异常';
+                    this.statusStripText.textContent = `${serviceText} · 47 份行研报告 · 5 个行业`;
+                }
+                if (this.statusStripDot) {
+                    this.statusStripDot.style.background = serviceOk ? 'var(--accent-muted)' : 'var(--danger)';
+                }
+            },
+            bindEvents() {
+                document.getElementById('btn-new-chat').onclick = () => { SessionManager.createNewSession(); };
+                this.inputEl.addEventListener('input', () => {
+                    this.inputEl.style.height = 'auto';
+                    this.inputEl.style.height = Math.min(this.inputEl.scrollHeight, 120) + 'px';
+                });
+                this.inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.handleSend(); }
+                });
+                this.sendBtn.onclick = () => this.handleSend();
+                document.getElementById('btn-close-panel').onclick = () => this.rightPanel.classList.add('collapsed');
+                this.initImageUpload();
+            },
+            initImageUpload() {
+                const attachBtn = document.getElementById('btn-attach');
+                const fileInput = document.getElementById('img-file-input');
+                const inputBox = document.querySelector('.input-box');
+                if (!attachBtn || !fileInput || !inputBox) return;
+
+                attachBtn.onclick = () => fileInput.click();
+                fileInput.addEventListener('change', (e) => {
+                    const target = e.target;
+                    const file = target && target.files ? target.files[0] : null;
+                    if (file) this.handleImageFile(file);
+                    fileInput.value = '';
+                });
+
+                document.addEventListener('paste', (e) => {
+                    if (!e.clipboardData) return;
+                    const items = Array.from(e.clipboardData.items || []);
+                    const imgItem = items.find(item => item.type.startsWith('image/'));
+                    if (!imgItem) return;
+                    const file = imgItem.getAsFile();
+                    if (file) this.handleImageFile(file);
+                });
+
+                inputBox.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    inputBox.style.borderColor = 'var(--accent-muted)';
+                });
+                inputBox.addEventListener('dragleave', () => {
+                    inputBox.style.borderColor = '';
+                });
+                inputBox.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    inputBox.style.borderColor = '';
+                    const file = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
+                    if (file && file.type.startsWith('image/')) this.handleImageFile(file);
+                });
+            },
+            handleImageFile(file) {
+                if (file.size > 10 * 1024 * 1024) {
+                    const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+                    showToast(`图片大小为 ${sizeMB}MB，超过10MB限制`);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const target = e.target;
+                    const dataUrl = target && typeof target.result === 'string' ? target.result : '';
+                    if (!dataUrl) return;
+                    this.pendingImage = { dataUrl, file };
+                    this.renderImagePreview(dataUrl);
+                };
+                reader.readAsDataURL(file);
+            },
+            renderImagePreview(dataUrl) {
+                const strip = document.getElementById('img-preview-strip');
+                const hint = document.getElementById('img-hint');
+                const attachBtn = document.getElementById('btn-attach');
+                if (!strip || !hint || !attachBtn) return;
+                strip.innerHTML = `
+                    <div class="img-thumb">
+                        <img src="${dataUrl}" alt="预览">
+                        <button class="img-thumb-remove" id="img-remove-btn">
+                            <svg viewBox="0 0 8 8" fill="none">
+                                <path d="M1.5 1.5L6.5 6.5M6.5 1.5L1.5 6.5" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                strip.style.display = 'flex';
+                hint.style.display = 'block';
+                attachBtn.classList.add('has-image');
+                const removeBtn = document.getElementById('img-remove-btn');
+                if (removeBtn) removeBtn.onclick = () => this.clearImage();
+            },
+            clearImage() {
+                this.pendingImage = null;
+                const strip = document.getElementById('img-preview-strip');
+                const hint = document.getElementById('img-hint');
+                const attachBtn = document.getElementById('btn-attach');
+                if (strip) {
+                    strip.style.display = 'none';
+                    strip.innerHTML = '';
+                }
+                if (hint) hint.style.display = 'none';
+                if (attachBtn) attachBtn.classList.remove('has-image');
+            },
+            async loadSamples() {
+                try {
+                    const grid = document.getElementById('suggestion-grid');
+                    grid.innerHTML = '';
+                    EXAMPLE_QUESTIONS.forEach((item) => {
+                        const card = document.createElement('div');
+                        card.className = 'suggestion-card';
+                        card.innerHTML = `
+                            <div class="example-tag">${item.tag}</div>
+                            <div class="example-question">${item.question}</div>
+                            <div class="example-sub">${item.sub}</div>
+                        `;
+                        card.onclick = () => this.sendQuestion(item.question);
+                        grid.appendChild(card);
+                    });
+                } catch (e) {}
+            },
+            switchToChatState() {
+                document.getElementById('empty-state').style.display = 'none';
+                document.getElementById('chat-container').style.display = 'flex';
+            },
+            switchToEmptyState() {
+                document.getElementById('chat-container').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'flex';
+                document.getElementById('chat-container').innerHTML = '';
+                this.rightPanel.classList.add('collapsed');
+            },
+            async handleSend() {
+                const text = this.inputEl.value.trim();
+                if ((!text && !this.pendingImage) || StreamHandler.isStreaming) return;
+                await this.sendQuestion(text);
+                this.inputEl.value = '';
+                this.inputEl.style.height = 'auto';
+            },
+            async sendQuestion(text) {
+                if (!SessionManager.currentSessionId) {
+                    await SessionManager.createNewSession(false);
+                }
+                const sessionId = SessionManager.currentSessionId;
+                this.switchToChatState();
+                const imageDataUrl = this.pendingImage ? this.pendingImage.dataUrl : null;
+                const imageBase64 = imageDataUrl && imageDataUrl.includes(',')
+                    ? imageDataUrl.split(',')[1]
+                    : imageDataUrl;
+                const normalizedText = text || (imageDataUrl ? '请帮我分析这张图片' : text);
+                if (imageDataUrl) MessageRenderer.appendUserWithImage(normalizedText, imageDataUrl);
+                else MessageRenderer.appendUser(normalizedText);
+                if (this.pendingImage) this.clearImage();
+                await SessionManager.upsertFromQuestion(normalizedText);
+                StreamHandler.startStream(normalizedText, 'general', sessionId, imageBase64);
+            },
+            setSendButtonState(enabled) { this.sendBtn.disabled = !enabled; },
+            openRightPanel(source) {
+                this.rightPanel.classList.remove('collapsed');
+                const content = document.getElementById('right-content');
+                // 清空右面板内容
+                content.innerHTML = '';
+                const detail = document.createElement('div');
+                detail.className = 'card';
+                detail.style.padding = '12px';
+                detail.innerHTML = `
+                    <div style="font-weight: 500; margin-bottom: 8px;">${source.title}</div>
+                    <div class="text-muted" style="font-size: 12px; margin-bottom: 8px;">来源: ${source.domain}</div>
+                    <div class="font-mono text-muted" style="font-size: 11px;">相关度得分: ${source.score}</div>
+                    <hr style="border: 0; border-top: 0.5px solid var(--border-subtle); margin: 8px 0;"/>
+                    <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">此处为知识源分块（Chunk）的具体上下文内容展示区域，包含匹配到的文本段落...</div>
+                `;
+                content.prepend(detail);
+            },
+            async handleFeedback(msgId, type) {
+                try { await Api.submitFeedback(msgId, type); showToast(type === 'up' ? '感谢您的正面反馈' : '已记录您的问题反馈'); }
+                catch(e) {}
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => UIController.init());
+    </script>
+</body>
+</html>

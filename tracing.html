@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查询追踪 - 投研助手</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/assets/shell.css" />
+    <style>
+        :root {
+          --bg-app:         #EAE7E0;
+          --bg-sidebar:     #E2DED6;
+          --bg-panel:       #F2F0EC;
+          --bg-hover:       #E8E5DE;
+          --bg-gray-layer:  #E8E5DE;
+          --border:         #C9C5BC;
+          --border-subtle:  #D8D4CC;
+          --accent:         #8B4513;
+          --accent-light:   #F0E6DC;
+          --accent-muted:   #B8784A;
+          --accent-dark:    #5C2D0A;
+          --btn-primary-bg: #2C2A24;
+          --btn-primary-fg: #F2F0EC;
+          --text-primary:   #2C2A24;
+          --text-secondary: #5A5449;
+          --text-muted:     #9A9287;
+          --success:        #6B7C45;
+          --success-light:  #E8EDD8;
+          --warning:        #8A6E2A;
+          --warning-light:  #F0E8D4;
+          --danger:         #8C3A2A;
+          --danger-light:   #F5E4E0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; box-shadow: none !important; }
+        button, input, select {
+            font-family: inherit; font-size: inherit; outline: none; border: none; background: none;
+            font-weight: 400;
+        }
+        button { cursor: pointer; color: inherit; }
+        .font-mono { font-family: "JetBrains Mono", Consolas, monospace; }
+        .fw-500 { font-weight: 500; }
+        .text-muted { color: var(--text-muted); }
+        .text-secondary { color: var(--text-secondary); }
+
+        .trace-workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        .trace-panel {
+            width: 380px;
+            background: var(--bg-sidebar);
+            border-radius: 12px;
+            margin: 10px 0 10px 10px;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        .trace-detail {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-width: 0;
+            background: var(--bg-app);
+            padding: 10px 10px 10px 8px;
+        }
+
+        .filter-bar {
+            padding: 14px 12px;
+            border-bottom: 0.5px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: transparent;
+        }
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+        }
+        .filter-row:not(.search-row) {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            align-items: stretch;
+        }
+        .filter-row.search-row {
+            width: 100%;
+            display: block;
+        }
+        .filter-bar .custom-select {
+            flex: 1;
+            min-width: 0;
+        }
+        .filter-bar .custom-select .cs-trigger {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+        .filter-bar .custom-select .cs-trigger .cs-value {
+            flex: 1;
+            text-align: left;
+            white-space: nowrap;
+        }
+        .filter-bar .custom-select .cs-trigger svg {
+            flex-shrink: 0;
+        }
+        .select-box {
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 7px;
+            padding: 6px 10px;
+            color: var(--text-primary);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .search-box {
+            flex: 1 1 auto;
+            width: 100%;
+            min-width: 0;
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 7px;
+            padding: 6px 10px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .filter-row.search-row .search-box { width: 100%; }
+        .search-box input { flex: 1; width: 100%; color: var(--text-primary); font-size: 12px; }
+        .search-box input::placeholder { color: var(--text-muted); }
+
+        .trace-list { flex: 1; overflow-y: auto; padding: 8px 0; display: flex; flex-direction: column; }
+        .trace-item {
+            padding: 12px 14px;
+            border-bottom: 0.5px solid var(--border-subtle);
+            cursor: pointer;
+            border-left: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .trace-item:hover { background: var(--bg-hover); }
+        .trace-item.active {
+            background: var(--bg-panel);
+            border-left-color: var(--accent);
+        }
+
+        .trace-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+        .trace-question {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+            flex: 1;
+        }
+        .trace-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+        .status-success { background: var(--success); }
+        .status-failed  { background: var(--danger); }
+
+        .trace-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+        .trace-badges { display: flex; gap: 6px; }
+        .badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-weight: 400;
+        }
+        .badge-cache {
+            background: #fef3e2;
+            color: #92400e;
+            border: 1px solid #f6d08a;
+        }
+        .latency { font-size: 12px; }
+        .latency.fast   { color: var(--success); }
+        .latency.medium { color: var(--warning); }
+        .latency.slow   { color: var(--danger); }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+        .detail-container {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 20px 24px;
+            gap: 20px;
+        }
+
+        .detail-header { display: flex; flex-direction: column; gap: 12px; }
+        .detail-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+        .detail-info-row {
+            display: flex;
+            gap: 14px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .info-item { display: flex; gap: 6px; align-items: center; }
+        .info-item span:last-child { color: var(--text-secondary); }
+
+        .section-title {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: .06em;
+            border-bottom: 0.5px solid var(--border-subtle);
+            padding-bottom: 7px;
+            margin-bottom: 12px;
+        }
+
+        .waterfall-container {
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .wf-row { display: flex; flex-direction: column; margin-bottom: 4px; }
+        .wf-main {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 7px;
+            transition: background 0.2s;
+        }
+        .wf-main:hover { background: var(--bg-hover); }
+        .wf-label {
+            width: 90px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: .04em;
+        }
+        .wf-track {
+            flex: 1;
+            height: 14px;
+            background: var(--bg-hover);
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+        }
+        .wf-bar {
+            position: absolute;
+            height: 100%;
+            background: var(--text-muted);
+            border-radius: 3px;
+            min-width: 2px;
+        }
+        .wf-time {
+            width: 60px;
+            text-align: right;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .wf-details {
+            display: none;
+            margin: 2px 0 10px 106px;
+            padding: 10px 12px;
+            background: transparent;
+            border: none;
+            border-top: 0.5px solid var(--border-subtle);
+            border-radius: 0;
+            font-size: 12px;
+        }
+        .wf-row.expanded .wf-details { display: block; }
+        .wf-row.expanded .wf-label { color: var(--text-primary); }
+        .wf-row.expanded .wf-bar   { background: var(--accent); }
+        .io-block { margin-bottom: 8px; }
+        .io-block:last-child { margin-bottom: 0; }
+        .io-label { color: var(--text-muted); margin-bottom: 4px; font-size: 11px; }
+        .io-content {
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 10px;
+            font-size: 11px;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-family: "JetBrains Mono", Consolas, monospace;
+        }
+        .wf-exec-block {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 0.5px dashed var(--border-subtle);
+        }
+        .wf-exec-title {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            letter-spacing: .04em;
+        }
+        .wf-exec-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .wf-exec-item {
+            border: 0.5px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-panel);
+            padding: 8px 10px;
+        }
+        .wf-exec-row {
+            display: flex;
+            gap: 8px;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+        .wf-exec-row:last-child { margin-bottom: 0; }
+        .wf-exec-key {
+            font-size: 10px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            min-width: 48px;
+            flex-shrink: 0;
+        }
+        .wf-exec-val {
+            font-size: 12px;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+        .wf-exec-tags {
+            margin-top: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .wf-exec-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: var(--bg-hover);
+            border: 0.5px solid var(--border-subtle);
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .chunks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+        .chunk-card {
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .chunk-header { display: flex; justify-content: space-between; align-items: center; }
+        .chunk-file {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .chunk-scores { display: flex; gap: 8px; font-size: 11px; }
+        .score-item {
+            background: var(--bg-hover);
+            border: none;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+        .chunk-preview {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .answer-box {
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            font-size: 13px;
+            line-height: 1.75;
+            color: var(--text-primary);
+        }
+
+        .error-card {
+            background: var(--danger-light);
+            border: 0.5px solid var(--danger);
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: var(--danger);
+            gap: 6px;
+            display: none;
+            flex-direction: column;
+        }
+        .error-title { font-size: 13px; font-weight: 500; color: var(--danger); display: flex; align-items: center; gap: 6px; }
+        .error-msg   { font-size: 12px; color: var(--danger); }
+
+    </style>
+</head>
+<body data-page="tracing">
+    <div id="sidebar-mount"></div>
+    <div class="page-body">
+    <div class="trace-workspace">
+    <aside class="trace-panel">
+        <div class="filter-bar">
+            <div class="filter-row">
+                <select class="select-box" id="filter-time">
+                    <option value="1h">最近 1 小时</option>
+                    <option value="6h">最近 6 小时</option>
+                    <option value="24h" selected>最近 24 小时</option>
+                    <option value="7d">最近 7 天</option>
+                </select>
+                <select class="select-box" id="filter-status">
+                    <option value="all">全部状态</option>
+                    <option value="success">成功</option>
+                    <option value="failed">失败</option>
+                </select>
+                <select class="select-box" id="filter-intent">
+                    <option value="all">全部意图</option>
+                    <option value="query">检索回答</option>
+                    <option value="chat">闲聊</option>
+                </select>
+            </div>
+            <div class="filter-row search-row">
+                <div class="search-box">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="filter-search" placeholder="搜索研报问题...">
+                </div>
+            </div>
+        </div>
+        <div class="trace-list" id="trace-list">
+            </div>
+    </aside>
+
+    <main class="trace-detail">
+        <div class="empty-state" id="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5" style="margin-bottom:16px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <div class="fw-500">请在左侧选择一条查询记录查看详情</div>
+        </div>
+
+        <div class="detail-container" id="detail-container">
+            <div class="detail-header">
+                <div class="detail-title" id="dt-question"></div>
+                <div class="detail-info-row font-mono">
+                    <div class="info-item"><span class="text-muted">TIME:</span> <span id="dt-time"></span></div>
+                    <div class="info-item"><span class="text-muted">ID:</span> <span id="dt-id"></span></div>
+                    <div class="info-item"><span class="text-muted">USER:</span> <span id="dt-user"></span></div>
+                    <div class="info-item"><span class="text-muted">TOTAL:</span> <span id="dt-total-latency" class="fw-500"></span></div>
+                </div>
+            </div>
+
+            <div class="error-card" id="error-card">
+                <div class="error-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    执行异常 (节点: <span id="err-node"></span>)
+                </div>
+                <div class="error-msg" id="err-msg"></div>
+            </div>
+
+            <div>
+                <div class="section-title">执行瀑布图</div>
+                <div class="waterfall-container" id="waterfall-container">
+                    </div>
+            </div>
+
+            <div id="chunks-section">
+                <div class="section-title">召回片段 (<span id="chunk-count">0</span>)</div>
+                <div class="chunks-grid" id="chunks-grid">
+                    </div>
+            </div>
+
+            <div id="answer-section">
+                <div class="section-title">生成回答</div>
+                <div class="answer-box">
+                    <div id="dt-answer" style="white-space: pre-wrap;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    </div>
+    </div>
+
+    <div id="chunk-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:var(--bg-panel); border-radius:14px; border:0.5px solid var(--border); width:520px; max-height:80vh; overflow-y:auto; display:flex; flex-direction:column;">
+            <div style="padding:18px 24px 14px; border-bottom:0.5px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+                <span id="chunk-modal-title" style="font-size:14px; font-weight:500; color:var(--text-primary);">查看片段</span>
+                <button onclick="closeChunkModal()" style="color:var(--text-muted); background:none; border:none; cursor:pointer;">✕</button>
+            </div>
+            <div style="padding:20px 24px;">
+                <label style="font-size:12px; font-weight:500; color:var(--text-secondary); display:block; margin-bottom:8px;">片段内容</label>
+                <textarea id="chunk-modal-content" style="width:100%; min-height:200px; background:var(--bg-app); border:0.5px solid var(--border); border-radius:8px; padding:10px 12px; font-size:13px; color:var(--text-primary); line-height:1.7; resize:vertical; pointer-events:none;"></textarea>
+                <div id="chunk-modal-task" style="display:none; margin-top:12px;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">向量化进度</div>
+                    <div style="height:4px; background:var(--border-subtle); border-radius:2px; overflow:hidden;">
+                        <div id="chunk-modal-fill" style="height:100%; background:var(--accent); width:0%; transition:width 0.3s;"></div>
+                    </div>
+                    <div id="chunk-modal-status" style="font-size:11px; color:var(--text-muted); margin-top:4px;"></div>
+                </div>
+            </div>
+            <div style="padding:14px 24px; border-top:0.5px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
+                <button onclick="closeChunkModal()" style="padding:7px 16px; border:0.5px solid var(--border); border-radius:8px; background:var(--bg-hover); font-size:13px; color:var(--text-secondary); cursor:pointer;">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/api.js"></script>
+    <script src="/assets/shell.js"></script>
+    <script>
+        // 全局函数
+        function closeChunkModal() {
+            const modal = document.getElementById('chunk-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function openChunkModal(content) {
+            const modal = document.getElementById('chunk-modal');
+            const contentEl = document.getElementById('chunk-modal-content');
+            if (contentEl) contentEl.value = content || '';
+            if (modal) modal.style.display = 'flex';
+        }
+
+        // Mock 链路追踪数据（仅用于 demo 展示）
+        const MOCK_TRACES = [
+            {
+                id: "tr_0dd1d335",
+                question: "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+                answer: "### 一、Token 暴增的趋势  \n\n- 近期国内日均 Token 调用量已突破 **140 万亿**，相比 2024 年初的约 **1000 亿**，增长了 **千倍以上**。  \n- 主要大模型（如豆包、字节跳动）日均 Token 使用量同样实现了数百倍至千倍的快速增长。  \n- 企业级 Token 消费进入规模化付费阶段，已有 **140 家** 企业客户累计调用量突破万亿，平台年度经常性收入实现 **60 倍** 的增长。  \n- 这种 Token 消耗的激增直接推动了算力需求的上升，形成了 \"Token 需求爆发 → 算力涨价 → 超节点部署 → 供给提升\" 的正向循环。\n\n### 二、分析师推荐关注的公司  \n\n- **国产 GPU**：寒武纪、海光信息  \n- **超节点整机**：中科曙光、浪潮信息、神州数码、拓维信息  \n- **算力租赁龙头**：协创数据、宏景科技、润建股份、利通电子、盈峰环境  \n- **核心配套**：华丰科技、杰华特、申菱环境、英维克、高澜股份、欧陆通、中恒电气  \n\n这些标的被视为受益于 Token 暴增带来的算力需求增长的关键企业。",
+                intent: "query",
+                route: "global",
+                total_latency_ms: 7309,
+                status: "success",
+                created_at: "2026-04-25T10:38:38.072862+00:00",
+                user: "api_user",
+                error: {},
+                spans: [
+                    {
+                        name: "generate",
+                        start_ms: 7,
+                        end_ms: 7309,
+                        input: "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+                        output: null,
+                        detail: null,
+                    },
+                ],
+                chunks: [],
+                cache_hit: true,
+            },
+        ];
+
+        const TraceAPI = {
+            _data: null,
+            async _loadMockData() {
+                if (!this._data) {
+                    const resp = await fetch('/mock_traces.json');
+                    const json = await resp.json();
+                    this._data = json.traces || [];
+                }
+                return this._data;
+            },
+            async getTraces(params) {
+                const traces = await this._loadMockData();
+                // 简单过滤
+                let result = [...traces];
+                if (params.status && params.status !== 'all') {
+                    result = result.filter(t => t.status === params.status);
+                }
+                if (params.intent && params.intent !== 'all') {
+                    result = result.filter(t => {
+                        const key = typeof t.intent === 'object' ? (t.intent.intent_type || '') : String(t.intent || '').toLowerCase();
+                        return key === params.intent;
+                    });
+                }
+                if (params.q && params.q.trim()) {
+                    const q = params.q.trim().toLowerCase();
+                    result = result.filter(t => (t.question || '').toLowerCase().includes(q));
+                }
+                return result;
+            },
+            async getTraceDetail(id) {
+                const traces = await this._loadMockData();
+                return traces.find(t => t.id === id) || null;
+            },
+        };
+
+        function formatCreatedAt(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return value;
+            return date.toLocaleString();
+        }
+
+        function formatListTime(value) {
+            const full = formatCreatedAt(value);
+            if (full.includes(' ')) return full.split(' ').slice(-1)[0];
+            return full;
+        }
+
+        /**
+         * ==========================================
+         * TraceList 模块
+         * ==========================================
+         */
+        const TraceList = {
+            data: [],
+            activeId: null,
+
+            async init() {
+                this.bindFilters();
+                await this.reload();
+            },
+
+            bindFilters() {
+                ['filter-time', 'filter-status', 'filter-intent'].forEach(id => {
+                    document.getElementById(id).addEventListener('change', () => this.reload());
+                });
+                document.getElementById('filter-search').addEventListener('input', () => this.reload());
+            },
+
+            getLatencyClass(ms) {
+                if (ms < 1000) return 'fast';
+                if (ms < 3000) return 'medium';
+                return 'slow';
+            },
+
+            getFilters() {
+                return {
+                    time: document.getElementById('filter-time').value,
+                    status: document.getElementById('filter-status').value,
+                    intent: document.getElementById('filter-intent').value,
+                    q: document.getElementById('filter-search').value.trim(),
+                };
+            },
+
+            async reload() {
+                try {
+                    this.data = await TraceAPI.getTraces(this.getFilters());
+                    if (this.activeId && !this.data.some(t => t.id === this.activeId)) {
+                        this.activeId = null;
+                        UIController.showEmptyView();
+                    }
+                    this.render();
+                } catch (err) {
+                    alert(`加载记录失败：${err.message}`);
+                }
+            },
+
+            render() {
+                const container = document.getElementById('trace-list');
+                const intentMap = {
+                    knowledge: '知识检索',
+                    query: '知识检索',
+                    chat: '闲聊',
+                    clarify: '澄清',
+                    system: '系统',
+                };
+                const routeMap = {
+                    directed: '精确检索',
+                    directed_only: '精确检索',
+                    global: '全局检索',
+                    fallback: '兜底检索',
+                    mix: '混合检索',
+                    clarify: '需要澄清',
+                    system: '系统回答',
+                };
+                const normalizeIntentKey = (rawIntent) => {
+                    if (rawIntent === null || rawIntent === undefined) return '';
+                    if (typeof rawIntent === 'object' && !Array.isArray(rawIntent)) {
+                        const key = String(rawIntent.intent_type ?? rawIntent.intent ?? '').trim().toLowerCase();
+                        return key;
+                    }
+                    const text = String(rawIntent).trim();
+                    if (!text) return '';
+                    const direct = text.toLowerCase();
+                    if (intentMap[direct]) return direct;
+
+                    // 兼容历史数据: "{'intent_type': 'knowledge'}"
+                    const pyStyleMatched = text.match(/intent_type['"]?\s*:\s*['"]([^'"]+)['"]/i);
+                    if (pyStyleMatched && pyStyleMatched[1]) {
+                        return String(pyStyleMatched[1]).trim().toLowerCase();
+                    }
+                    try {
+                        const parsed = JSON.parse(text);
+                        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                            return String(parsed.intent_type ?? parsed.intent ?? '').trim().toLowerCase();
+                        }
+                    } catch {
+                        // ignore parse error
+                    }
+                    return direct;
+                };
+                container.innerHTML = this.data.map(t => `
+                    <div class="trace-item ${this.activeId === t.id ? 'active' : ''}" onclick="TraceList.select('${t.id}')">
+                        <div class="trace-header">
+                            <div class="trace-question">${t.question}</div>
+                            <div class="trace-status-dot ${t.status === 'success' ? 'status-success' : 'status-failed'}"></div>
+                        </div>
+                        <div class="trace-meta">
+                            <div class="trace-badges">
+                            ${t.cache_hit
+                                ? `<span class="badge badge-cache">缓存命中</span>`
+                                : `
+                                    <span class="badge">${intentMap[normalizeIntentKey(t.intent)] || t.intent}</span>
+                                    <span class="badge">${routeMap[t.route] || t.route}</span>
+                                `
+                            }
+                        </div>
+                            <div class="latency font-mono ${this.getLatencyClass(t.total_latency_ms)}">${t.total_latency_ms}ms</div>
+                        </div>
+                        <div class="trace-meta text-muted" style="margin-top:-4px;">
+                            <span>${formatListTime(t.created_at)}</span>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            async select(id) {
+                this.activeId = id;
+                this.render(); // Update active state
+                await TraceDetail.load(id);
+            }
+        };
+
+        /**
+         * ==========================================
+         * WaterfallRenderer 模块
+         * ==========================================
+         */
+        const WaterfallRenderer = {
+            spanFieldConfig: {
+                rewrite: {},
+                intent: {
+                    intent_type: '意图类型',
+                    recognized_intents: '识别意图',
+                },
+                retrieval: {
+                    deduped_count: '召回总数',
+                    rerank: '重排',
+                },
+                rerank: {
+                    top_k: 'Top K',
+                    reranked: '重排数量',
+                },
+                generate: {
+                    model: '模型',
+                    input_tokens: '输入 token',
+                    output_tokens: '输出 token',
+                },
+            },
+            escapeHTML(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            },
+            parseDetail(raw) {
+                try {
+                    const obj = JSON.parse(raw);
+                    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+                        return null;
+                    }
+                    return obj;
+                } catch {
+                    return null;
+                }
+            },
+            formatExecutionDetails(rawItems) {
+                if (!Array.isArray(rawItems) || rawItems.length === 0) {
+                    return '';
+                }
+                const scopeMap = {
+                    directed: '定向',
+                    global: '全局',
+                };
+                const methodMap = {
+                    hybrid: '混合',
+                    vector: '向量',
+                };
+                const mapScopeText = (value) => {
+                    if (value === null || value === undefined) return '-';
+                    const normalizeToken = (token) => {
+                        const raw = String(token ?? '').trim();
+                        if (!raw) return '';
+                        return scopeMap[raw.toLowerCase()] || raw;
+                    };
+                    if (Array.isArray(value)) {
+                        const mapped = value.map(normalizeToken).filter(Boolean);
+                        return mapped.length ? mapped.join(' + ') : '-';
+                    }
+                    const text = String(value).trim();
+                    if (!text) return '-';
+                    const mapped = text
+                        .split('+')
+                        .map(part => normalizeToken(part))
+                        .filter(Boolean);
+                    return mapped.length ? mapped.join(' + ') : text;
+                };
+                const mapMethodText = (value) => {
+                    const raw = String(value ?? '').trim();
+                    if (!raw) return '-';
+                    return methodMap[raw.toLowerCase()] || raw;
+                };
+                const normalizeText = (value, fallback = '-') => {
+                    if (value === null || value === undefined) return fallback;
+                    if (Array.isArray(value)) return value.length ? value.map(item => String(item ?? '').trim()).filter(Boolean).join(' + ') : fallback;
+                    const text = String(value).trim();
+                    return text || fallback;
+                };
+
+                const cards = rawItems
+                    .filter(item => item && typeof item === 'object' && !Array.isArray(item))
+                    .map((item, index) => {
+                        const intent = normalizeText(item.intent);
+                        const query = normalizeText(item.query);
+                        const scopes = mapScopeText(item.scopes);
+                        const method = mapMethodText(item.method);
+                        const topK = normalizeText(item.top_k);
+                        const rerank = typeof item.rerank === 'boolean' ? (item.rerank ? '开' : '关') : normalizeText(item.rerank);
+                        const intentTag = intent !== '-' ? `<span class="wf-exec-tag">${this.escapeHTML(intent)}</span>` : '';
+
+                        const tags = [
+                            `范围: ${scopes}`,
+                            `方式: ${method}`,
+                            `top_k: ${topK}`,
+                            `重排: ${rerank}`,
+                        ]
+                            .filter(Boolean)
+                            .map(tag => `<span class="wf-exec-tag">${this.escapeHTML(tag)}</span>`)
+                            .join('');
+
+                        return `
+                            <div class="wf-exec-item">
+                                <div class="wf-exec-row">
+                                    <span class="wf-exec-key">子问题</span>
+                                    <span class="wf-exec-val">#${index + 1} ${intentTag} ${this.escapeHTML(query)}</span>
+                                </div>
+                                ${tags ? `<div class="wf-exec-tags">${tags}</div>` : ''}
+                            </div>
+                        `;
+                    })
+                    .join('');
+
+                return cards;
+            },
+            formatRewriteQuestions(obj) {
+                const items = this.parseArrayLike(obj?.intent_sub_questions);
+                if (!items) {
+                    return '';
+                }
+                const lines = items
+                    .filter(item => item && typeof item === 'object' && !Array.isArray(item))
+                    .map(item => {
+                        const intent = String(item.intent ?? '').trim();
+                        const query = String(item.query ?? '').trim();
+                        if (!query) return '';
+                        const tag = intent ? `<span class="wf-exec-tag">${this.escapeHTML(intent)}</span>` : '';
+                        return `${tag} ${this.escapeHTML(query)}`;
+                    })
+                    .filter(Boolean);
+                if (!lines.length) {
+                    return '';
+                }
+                return `<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px;">
+                    <span style="font-size:10px;color:#9A9287;white-space:nowrap;min-width:80px;flex-shrink:0;">改写问题</span>
+                    <span style="font-size:12px;color:#2C2A24;word-break:break-all;">${lines.join('<br>')}</span>
+                </div>`;
+            },
+            parseArrayLike(value) {
+                if (Array.isArray(value)) {
+                    return value;
+                }
+                if (typeof value === 'string') {
+                    try {
+                        const parsed = JSON.parse(value);
+                        if (Array.isArray(parsed)) {
+                            return parsed;
+                        }
+                    } catch {
+                        return null;
+                    }
+                }
+                return null;
+            },
+            formatDetail(raw, spanName) {
+                const obj = this.parseDetail(raw);
+                if (!obj) {
+                    return '';
+                }
+                const normalizedSpanName = String(spanName || '').toLowerCase();
+                if (normalizedSpanName === 'rewrite') {
+                    return this.formatRewriteQuestions(obj);
+                }
+                const detailObj = { ...obj };
+                if (normalizedSpanName === 'intent') {
+                    const intents = this.parseArrayLike(detailObj.intents);
+                    if (intents && intents.length) {
+                        detailObj.recognized_intents = intents;
+                    } else if (detailObj.intent_label !== undefined) {
+                        detailObj.recognized_intents = [detailObj.intent_label];
+                    }
+                }
+                if (
+                    normalizedSpanName === 'retrieval'
+                    && detailObj.retrieved_total_before_dedup === undefined
+                    && detailObj.retrieved_count !== undefined
+                ) {
+                    detailObj.retrieved_total_before_dedup = detailObj.retrieved_count;
+                }
+                // 为 retrieval 阶段添加 rerank 字段
+                if (normalizedSpanName === 'retrieval' && detailObj.rerank === undefined) {
+                    // 从 merged_params 中提取 rerank 值
+                    if (detailObj.merged_params && typeof detailObj.merged_params === 'object') {
+                        detailObj.rerank = detailObj.merged_params.rerank;
+                    } else if (detailObj.merged_params && typeof detailObj.merged_params === 'string') {
+                        try {
+                            const params = JSON.parse(detailObj.merged_params);
+                            if (params && typeof params === 'object') {
+                                detailObj.rerank = params.rerank;
+                            }
+                        } catch {
+                            // 解析失败，尝试从字符串中提取
+                            if (detailObj.merged_params.includes('重排: 开')) {
+                                detailObj.rerank = true;
+                            } else if (detailObj.merged_params.includes('重排: 关')) {
+                                detailObj.rerank = false;
+                            }
+                        }
+                    }
+                }
+                const config = this.spanFieldConfig[normalizedSpanName] || {};
+                const multilineKeys = new Set(['sub_questions', 'intents', 'queries']);
+                const intentTypeMap = {
+                    system: '系统',
+                    knowledge: '知识问答',
+                    unknown: '未知',
+                    vision_only: '视觉直答',
+                    vision_kb: '视觉检索',
+                    // 兼容历史值
+                    chitchat: '闲聊',
+                    math: '计算',
+                };
+                const mapIntentType = (value) => {
+                    const text = String(value ?? '').trim();
+                    if (!text) return '-';
+                    return intentTypeMap[text.toLowerCase()] || text;
+                };
+                const mapBooleanText = (value) => {
+                    if (typeof value === 'boolean') return value ? '开' : '关';
+                    const text = String(value ?? '').trim().toLowerCase();
+                    if (text === 'true') return '开';
+                    if (text === 'false') return '关';
+                    return String(value ?? '').trim();
+                };
+                const mapShouldSplit = (value) => {
+                    if (typeof value === 'boolean') {
+                        return value ? '已拆分' : '未拆分';
+                    }
+                    const text = String(value ?? '').trim().toLowerCase();
+                    if (text === 'true') return '已拆分';
+                    if (text === 'false') return '未拆分';
+                    return String(value ?? '');
+                };
+                const formatMergedParams = (value) => {
+                    const params = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+                    const parts = [];
+                    if (params.top_k !== undefined && params.top_k !== null && String(params.top_k).trim()) {
+                        parts.push(`top_k: ${String(params.top_k).trim()}`);
+                    }
+                    if (params.rerank !== undefined && params.rerank !== null && String(params.rerank).trim()) {
+                        parts.push(`重排: ${mapBooleanText(params.rerank)}`);
+                    }
+                    const sortBy = String(params.sort_by ?? '').trim();
+                    if (sortBy) {
+                        parts.push(`排序: ${sortBy === 'date_desc' ? '时间倒序' : sortBy}`);
+                    }
+                    return parts.join(' / ');
+                };
+                const entries = Object.entries(config)
+                .filter(([key]) => detailObj[key] !== undefined)
+                .map(([key, label]) => {
+                    const value = detailObj[key];
+                    let valHTML = '';
+                    if (key === 'intent_items') {
+                        const parsedArray = this.parseArrayLike(value);
+                        if (parsedArray) {
+                            const lines = parsedArray
+                                .map(item => {
+                                    if (!item || typeof item !== 'object' || Array.isArray(item)) return '';
+                                    return String(item.query ?? '').trim();
+                                })
+                                .filter(Boolean);
+                            if (lines.length > 0) {
+                                valHTML = lines.map(line => this.escapeHTML(line)).join('<br>');
+                            }
+                        }
+                    }
+                    if (multilineKeys.has(key)) {
+                        const parsedArray = this.parseArrayLike(value);
+                        if (parsedArray) {
+                            const lines = parsedArray
+                                .map(item => String(item ?? '').trim())
+                                .filter(Boolean);
+                            if (lines.length > 0) {
+                                valHTML = lines.map(line => this.escapeHTML(line)).join('<br>');
+                            }
+                        }
+                    }
+                    if (key === 'recognized_intents') {
+                        const parsedArray = this.parseArrayLike(value);
+                        if (parsedArray) {
+                            const text = parsedArray
+                                .map(item => String(item ?? '').trim())
+                                .filter(Boolean)
+                                .join(' · ');
+                            if (text) {
+                                valHTML = this.escapeHTML(text);
+                            }
+                        }
+                    }
+                    if (key === 'merged_params') {
+                        const text = formatMergedParams(value);
+                        if (text) {
+                            valHTML = this.escapeHTML(text);
+                        }
+                    }
+                    if (!valHTML) {
+                        let fallback = '';
+                        if (key === 'intent_type') {
+                            fallback = mapIntentType(value);
+                        } else if (key === 'should_split') {
+                            fallback = mapShouldSplit(value);
+                        } else {
+                            fallback = typeof value === 'object' ? JSON.stringify(value) : String(value);
+                        }
+                        valHTML = this.escapeHTML(fallback);
+                    }
+                    return `<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:4px;">
+                        <span style="font-size:10px;color:#9A9287;white-space:nowrap;min-width:80px;flex-shrink:0;">${this.escapeHTML(label)}</span>
+                        <span style="font-size:12px;color:#2C2A24;word-break:break-all;">${valHTML}</span>
+                    </div>`;
+                }).join('');
+                return entries || '';
+            },
+            render(spans, totalMs, cacheHit = false) {
+                const container = document.getElementById('waterfall-container');
+                if (cacheHit) {
+                    const duration = Math.max(0, Number(totalMs) || 0);
+                    container.innerHTML = `
+                        <div class="wf-row">
+                            <div class="wf-main">
+                                <div class="wf-label">缓存命中</div>
+                                <div class="wf-track">
+                                    <div class="wf-bar" style="left: 0%; width: 100%;"></div>
+                                </div>
+                                <div class="wf-time font-mono">${duration}ms</div>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                if (!spans || spans.length === 0) {
+                    container.innerHTML = '<div class="text-muted">暂无执行节点数据</div>';
+                    return;
+                }
+
+                // 保证瀑布图刻度合理，如果是失败导致 totalMs 不准，取最大 end_ms
+                const maxEnd = Math.max(1, totalMs, ...spans.map(s => s.end_ms));
+
+                container.innerHTML = spans.filter(span => span.name !== 'rerank').map((span, index) => {
+                    const leftPct = (span.start_ms / maxEnd) * 100;
+                    const widthPct = ((span.end_ms - span.start_ms) / maxEnd) * 100;
+                    const duration = span.end_ms - span.start_ms;
+                    const spanName = String(span.name || '').toLowerCase();
+                    
+                    let detailsHtml = '';
+                    const hideInput = spanName === 'generate' || spanName === 'rerank' || spanName === 'rewrite' || spanName === 'retrieval';
+                    const hideOutput = spanName === 'rewrite' || spanName === 'rerank';
+                    const hideDetail = spanName === 'rerank';
+
+                    if (span.input && !hideInput) {
+                        detailsHtml += `
+                            <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:8px;">
+                                <span style="font-size:10px;color:#9A9287;white-space:nowrap;width:36px;flex-shrink:0;">输入</span>
+                                <span style="font-size:12px;color:#2C2A24;line-height:1.6;">${this.escapeHTML(span.input)}</span>
+                            </div>`;
+                    }
+                    if (span.output && !hideOutput) {
+                        detailsHtml += `
+                            <div style="display:flex;gap:8px;align-items:baseline;margin-bottom:8px;">
+                                <span style="font-size:10px;color:#9A9287;white-space:nowrap;width:36px;flex-shrink:0;">输出</span>
+                                <span style="font-size:12px;color:#2C2A24;line-height:1.6;">${this.escapeHTML(span.output)}</span>
+                            </div>`;
+                    }
+                    if (span.detail && !hideDetail) {
+                        const detailObject = this.parseDetail(span.detail);
+                        const rows = this.formatDetail(span.detail, spanName);
+                        const execRows = spanName === 'retrieval' ? this.formatExecutionDetails(detailObject?.execution_details) : '';
+                        if (rows || execRows) {
+                        detailsHtml += `
+                            <div style="border-top:0.5px solid #D8D4CC;padding-top:8px;margin-top:4px;">
+                                ${rows || ''}
+                                ${execRows ? `
+                                    <div class="wf-exec-block">
+                                        <div class="wf-exec-title">子问题执行明细</div>
+                                        <div class="wf-exec-list">${execRows}</div>
+                                    </div>
+                                ` : ''}
+                            </div>`;
+                        }
+                    }
+
+                    return `
+                        <div class="wf-row" onclick="this.classList.toggle('expanded')">
+                            <div class="wf-main">
+                                <div class="wf-label">${span.name}</div>
+                                <div class="wf-track">
+                                    <div class="wf-bar" style="left: ${leftPct}%; width: ${Math.max(widthPct, 0.5)}%;"></div>
+                                </div>
+                                <div class="wf-time font-mono">${duration}ms</div>
+                            </div>
+                            ${detailsHtml ? `<div class="wf-details">${detailsHtml}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+        };
+
+        /**
+         * ==========================================
+         * TraceDetail 模块
+         * ==========================================
+         */
+        const TraceDetail = {
+            async load(id) {
+                UIController.showDetailView();
+                let detail = null;
+                try {
+                    detail = await TraceAPI.getTraceDetail(id);
+                } catch (err) {
+                    alert(`加载详情失败：${err.message}`);
+                    UIController.showEmptyView();
+                    return;
+                }
+                if (!detail) return;
+
+                // 渲染基础信息
+                document.getElementById('dt-question').innerText = detail.question;
+                document.getElementById('dt-time').innerText = formatCreatedAt(detail.created_at);
+                document.getElementById('dt-id').innerText = detail.id;
+                document.getElementById('dt-user').innerText = detail.user;
+                
+                const latEl = document.getElementById('dt-total-latency');
+                latEl.innerText = `${detail.total_latency_ms}ms`;
+                latEl.className = `fw-500 ${TraceList.getLatencyClass(detail.total_latency_ms)}`;
+
+                // 错误处理
+                const errCard = document.getElementById('error-card');
+                const ansSection = document.getElementById('answer-section');
+                if (detail.status === 'failed' && detail.error) {
+                    errCard.style.display = 'flex';
+                    ansSection.style.display = 'none';
+                    document.getElementById('err-node').innerText = detail.error.node.toUpperCase();
+                    document.getElementById('err-msg').innerText = `[${detail.error.code}] ${detail.error.msg}`;
+                } else {
+                    errCard.style.display = 'none';
+                    ansSection.style.display = 'block';
+                    document.getElementById('dt-answer').innerText = detail.answer;
+                }
+
+                // 渲染瀑布图
+                WaterfallRenderer.render(detail.spans, detail.total_latency_ms, Boolean(detail.cache_hit));
+
+                // 渲染 Chunks
+                const chunksSection = document.getElementById('chunks-section');
+                const chunksGrid = document.getElementById('chunks-grid');
+                if (detail.chunks && detail.chunks.length > 0) {
+                    chunksSection.style.display = 'block';
+                    document.getElementById('chunk-count').innerText = detail.chunks.length;
+                    chunksGrid.innerHTML = detail.chunks.map(c => {
+                        const fallbackName = String(c.file || '-').split('/').pop().split('\\').pop();
+                        const displayName = String(c.display_name || fallbackName || '-');
+                        return `
+                        <div class="chunk-card" data-content="${c.content || c.preview || ''}">
+                            <div class="chunk-header">
+                                <div class="chunk-file" title="${c.file}">${displayName}</div>
+                            </div>
+                            <div class="chunk-scores font-mono">
+                                <span class="score-item">RR: ${c.rerank_score.toFixed(3)}</span>
+                                <span class="score-item text-muted">Ori: ${c.origin_score.toFixed(3)}</span>
+                            </div>
+                            <div class="chunk-preview">${c.preview}</div>
+                        </div>
+                    `;
+                    }).join('');
+                    
+                    // 添加事件监听器
+                    document.querySelectorAll('.chunk-card').forEach(card => {
+                        card.addEventListener('click', function() {
+                            const content = this.getAttribute('data-content');
+                            openChunkModal(content);
+                        });
+                    });
+                } else {
+                    chunksSection.style.display = 'none';
+                }
+            }
+        };
+
+        /**
+         * ==========================================
+         * UIController
+         * ==========================================
+         */
+        const UIController = {
+            init() {
+                TraceList.init();
+            },
+            showEmptyView() {
+                document.getElementById('empty-state').style.display = 'flex';
+                document.getElementById('detail-container').style.display = 'none';
+            },
+            showDetailView() {
+                document.getElementById('empty-state').style.display = 'none';
+                document.getElementById('detail-container').style.display = 'flex';
+            }
+        };
+
+        // Bootstrap
+        document.addEventListener('DOMContentLoaded', () => UIController.init());
+
+    </script>
+</body>
+</html>

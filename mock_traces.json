@@ -1,0 +1,395 @@
+{
+  "traces": [
+    {
+      "id": "tr_0dd1d335",
+      "question": "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+      "answer": "### 一、Token 暴增的趋势  \n\n- 近期国内日均 Token 调用量已突破 **140 万亿**，相比 2024 年初的约 **1000 亿**，增长了 **千倍以上**。  \n- 主要大模型（如豆包、字节跳动）日均 Token 使用量同样实现了数百倍至千倍的快速增长。  \n- 企业级 Token 消费进入规模化付费阶段，已有 **140 家** 企业客户累计调用量突破万亿，平台年度经常性收入实现 **60 倍** 的增长。  \n- 这种 Token 消耗的激增直接推动了算力需求的上升，形成了 \"Token 需求爆发 → 算力涨价 → 超节点部署 → 供给提升\" 的正向循环。\n\n### 二、分析师推荐关注的公司  \n\n- **国产 GPU**：寒武纪、海光信息  \n- **超节点整机**：中科曙光、浪潮信息、神州数码、拓维信息  \n- **算力租赁龙头**：协创数据、宏景科技、润建股份、利通电子、盈峰环境  \n- **核心配套**：华丰科技、杰华特、申菱环境、英维克、高澜股份、欧陆通、中恒电气  \n\n这些标的被视为受益于 Token 暴增带来的算力需求增长的关键企业。",
+      "intent": "query",
+      "route": "global",
+      "total_latency_ms": 7309,
+      "status": "success",
+      "created_at": "2026-04-25T10:38:38.072862+00:00",
+      "user": "api_user",
+      "error": {},
+      "spans": [
+        {
+          "name": "generate",
+          "start_ms": 7,
+          "end_ms": 7309,
+          "input": "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+          "output": null,
+          "detail": null
+        }
+      ],
+      "chunks": [],
+      "cache_hit": true
+    },
+    {
+    "id": "tr_12e73843",
+    "question": "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+    "answer": "### 一、Token 暴增的趋势  \n\n- 近期国内日均 Token 调用量已突破 **140 万亿**，相比 2024 年初的约 **1000 亿**，增长了 **千倍以上**。  \n- 主要大模型（如豆包、字节跳动）日均 Token 使用量同样实现了数百倍至千倍的快速增长。  \n- 企业级 Token 消费进入规模化付费阶段，已有 **140 家** 企业客户累计调用量突破万亿，平台年度经常性收入实现 **60 倍** 的增长。  \n- 这种 Token 消耗的激增直接推动了算力需求的上升，形成了 “Token 需求爆发 → 算力涨价 → 超节点部署 → 供给提升” 的正向循环。\n\n### 二、分析师推荐关注的公司  \n\n- **国产 GPU**：寒武纪、海光信息  \n- **超节点整机**：中科曙光、浪潮信息、神州数码、拓维信息  \n- **算力租赁龙头**：协创数据、宏景科技、润建股份、利通电子、盈峰环境  \n- **核心配套**：华丰科技、杰华特、申菱环境、英维克、高澜股份、欧陆通、中恒电气  \n\n这些标的被视为受益于 Token 暴增带来的算力需求增长的关键企业。",
+    "intent": "query",
+    "route": "directed",
+    "total_latency_ms": 34528,
+    "status": "success",
+    "created_at": "2026-04-25T10:37:50.981415+00:00",
+    "user": "api_user",
+    "error": {},
+    "spans": [
+        {
+            "name": "intent",
+            "start_ms": 5,
+            "end_ms": 7558,
+            "input": "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+            "output": null,
+            "detail": "{\"intent_type\": \"knowledge\", \"intent_label\": \"行业研究\", \"score\": 0.9, \"candidates\": [{\"label\": \"行业研究\", \"score\": 0.9, \"domain\": \"research\"}], \"entities\": {\"company\": [], \"industry\": [\"计算机\"], \"metric\": \"\", \"time_range\": \"\"}, \"requires_aggregation\": true, \"intents\": [\"行业研究\", \"观点评级\"], \"intent_items\": [{\"intent\": \"行业研究\", \"query\": \"计算机行业Token暴增的趋势如何？\"}, {\"intent\": \"观点评级\", \"query\": \"分析师推荐关注哪些公司？\"}], \"industry\": \"tech\", \"industry_confidence\": 0.95, \"raw_question\": \"计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？\", \"has_image\": false, \"intents_count\": 2, \"intent_items_count\": 2, \"routing\": {\"layer1\": \"kb_search\", \"legacy_strategy\": \"directed_only\", \"scopes\": [\"directed\"], \"method\": \"vector\", \"retriever\": \"semantic\", \"top_k\": 15, \"rerank\": true, \"sort_by\": \"\", \"tip\": \"召回多份报告后聚合摘要\", \"legacy_scope_aliases\": {\"directed_only\": \"directed\", \"industry_only\": \"directed\", \"global_only\": \"global\", \"directed_global_mix\": \"directed + global\"}}}"
+        },
+        {
+            "name": "rewrite",
+            "start_ms": 7558,
+            "end_ms": 15313,
+            "input": "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+            "output": "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+            "detail": "{\"rewrite\": \"计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？\", \"should_split\": true, \"sub_questions\": [\"计算机行业Token暴增的趋势如何？\", \"分析师推荐关注哪些公司？\"], \"input_intent_items\": [{\"intent\": \"行业研究\", \"query\": \"计算机行业Token暴增的趋势如何？\"}, {\"intent\": \"观点评级\", \"query\": \"分析师推荐关注哪些公司？\"}], \"intent_sub_questions\": [{\"intent\": \"行业研究\", \"query\": \"计算机行业Token暴增的趋势如何？\"}, {\"intent\": \"观点评级\", \"query\": \"分析师推荐关注哪些公司？\"}]}"
+        },
+        {
+            "name": "retrieval",
+            "start_ms": 15313,
+            "end_ms": 25199,
+            "input": "计算机行业Token暴增的趋势如何？ | 分析师推荐关注哪些公司？",
+            "output": null,
+            "detail": "{\"retrieved_count\": 10, \"retrieved_total_before_dedup\": 10, \"deduped_count\": 10, \"merged_params\": {\"top_k\": 15, \"rerank\": true, \"sort_by\": \"\"}, \"strategy\": \"intent_items\", \"query_count\": 2, \"queries\": [\"计算机行业Token暴增的趋势如何？\", \"分析师推荐关注哪些公司？\"], \"execution_details\": [{\"intent\": \"行业研究\", \"query\": \"计算机行业Token暴增的趋势如何？\", \"scopes\": [\"directed\"], \"method\": \"vector\", \"top_k\": 15, \"rerank\": true, \"sort_by\": \"\", \"legacy_strategy\": \"directed_only\"}, {\"intent\": \"观点评级\", \"query\": \"分析师推荐关注哪些公司？\", \"scopes\": [\"directed\"], \"method\": \"vector\", \"top_k\": 10, \"rerank\": true, \"sort_by\": \"date_desc\", \"legacy_strategy\": \"directed_only\"}], \"source_strategy\": \"directed_only\"}"
+        },
+        {
+            "name": "rerank",
+            "start_ms": 25199,
+            "end_ms": 25199,
+            "input": null,
+            "output": null,
+            "detail": "{\"mode\": \"integrated_in_retrieval\"}"
+        },
+        {
+            "name": "generate",
+            "start_ms": 25199,
+            "end_ms": 34522,
+            "input": "计算机行业Token暴增的趋势如何，分析师推荐关注哪些公司？",
+            "output": null,
+            "detail": null
+        }
+    ],
+    "chunks": [
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604221821430476_1.pdf",
+            "display_name": "计算机行业周报-Token暴增推动估值重构：从“卖算力”到“卖Token”",
+            "preview": "# Token暴增推动估值重构：从“卖算 力”到“卖Token”\n\n\n计算机行业周报 （2026.4.13—2026.4.17)",
+            "rerank_score": 0.8937867444975365,
+            "origin_score": 0.8902339339256287
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604221821430476_1.pdf",
+            "display_name": "计算机行业周报-Token暴增推动估值重构：从“卖算力”到“卖Token”",
+            "preview": "# 周观点\n\n\n国内外云厂商密集涨价。国内：（1）阿里：连续发布三则涨价通知。根据中国证券报微信公众号，3月18日，阿里云发布公告称，因全球AI需求爆发、供应链涨价，阿里云AI算力、存储等产品最高涨价34%。平头哥真武810E等算力卡产品上涨5%一34%，文件存储产品CPFS（智算版）上涨30%，新价格于4月18日起生效。4月13日，阿里云宣布，大数据开发治理平台DataWorks调整标准版、专业版用户的API免费额度，并支持按量付费，标准版API免费额度调整为10万次/月，",
+            "rerank_score": 0.8061290203202536,
+            "origin_score": 0.8371913433074951
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604221821430476_1.pdf",
+            "display_name": "计算机行业周报-Token暴增推动估值重构：从“卖算力”到“卖Token”",
+            "preview": "# 投资建议\n\n\n建议关注：（1）国产GPU：寒武纪、海光信息等；（2）超节点整机：中科曙光、浪潮信息、神州数码、拓维信息等；（3）算力租赁龙头：协创数据、宏景科技、润建股份、利通电子、盈峰环境等；（4)核心配套：华丰科技、杰华特、申菱环境、英维克、高澜股份、欧陆通、中恒电气等。",
+            "rerank_score": 0.7651022290544265,
+            "origin_score": 0.8187838792800903
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604221821430476_1.pdf",
+            "display_name": "计算机行业周报-Token暴增推动估值重构：从“卖算力”到“卖Token”",
+            "preview": "# 相关报告：\n\n\n《量子“跃迁”，人机“融合”》-2026年04月14日《大模型创新仍在加速，推动AI推理需求爆发》2026年04月14日《Token经济引燃算力需求，国产算力链有望迎来拐点》-2026年04月07日过去一周（4.13-4.17）上证综指上涨1.64%，创业板指上涨6.65%，沪深300指数上涨1.99%，计算机（申万）指数上涨3.35%，跑赢上证综指1.72个百分点，跑输创业板指3.30个百分点，跑赢沪深300指数1.36个百分点，位列全行业第9名。",
+            "rerank_score": 0.6720800233853303,
+            "origin_score": 0.7998235523700714
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604241821529166_1.pdf",
+            "display_name": "通信行业点评报告：谷歌全新TPU及受益标的解析",
+            "preview": "# ·谷歌链或持续超预期，重视谷歌链投资机会\n\n\n（1)【光模块&光芯片】推荐标的：中际旭创、新易盛、源杰科技；受益标的：长芯博创等；\n\n(2)【液冷&泵】液冷推荐标的：英维克；泵受益标的：飞龙股份、大元泵业；\n\n（3）【OCS】受益标的：腾景科技、炬光科技、光库科技、赛微电子；\n\n（4)【服务器电源】推荐标的：欧陆通；\n\n（5）【光器件】受益标的：长飞光纤、太辰光等。\n\n·风险提示：5G建设不及预期、AI发展不及预期、中美贸易摩擦等。",
+            "rerank_score": 0.5695260717833812,
+            "origin_score": 0.8237398564815521
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604191821320317_1.pdf",
+            "display_name": "医药生物行业快评报告：健全药品价格形成机制，支持高水平创新药",
+            "preview": "# 公司投资评级\n\n\n买入：未来6个月内公司相对大盘涨幅15%以上;  \n增持：未来6个月内公司相对大盘涨幅5%至15%;  \n观望：未来6个月内公司相对大盘涨幅-5%至5%;  \n卖出：未来6个月内公司相对大盘跌幅5%以上。  \n基准指数：沪深300指数",
+            "rerank_score": 0.5601087818151702,
+            "origin_score": 0.8273439109325409
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604241821529166_1.pdf",
+            "display_name": "通信行业点评报告：谷歌全新TPU及受益标的解析",
+            "preview": "# 分析师承诺\n\n\n本研究报告的署名人员具有中国证券业协会授予的证券投资咨询执业资格或相当的专业胜任能力，以勤勉的职业态度，独立、客观地出具本报告，并对内容和观点负责。本报告清晰准确地反映了署名人员的研究观点，所包含的分析基于各种假设，不同假设可能导致分析结果出现重大不同。本报告采用的各种估值方法及模型均有其局限性，估值结果不保证所涉及证券能够在该价格交易。本报告署名人员保证他们报酬的任何一部分不曾与，不与，也将不会与本报告中具体的推荐意见或观点有直接或间接的联系。\n\n股票投",
+            "rerank_score": 0.5407043406749849,
+            "origin_score": 0.8275027275085449
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604221821430476_1.pdf",
+            "display_name": "计算机行业周报-Token暴增推动估值重构：从“卖算力”到“卖Token”",
+            "preview": "# 分析师声明\n\n\n作者具有中国证券业协会授予的证券投资咨询资格或相当的专业胜任能力，以勤勉尽责的职业态度，独立、客观地出具本报告，并保证报告采用的信息均来自合规渠道，力求清晰、准确地反映作者的研究观点，结论不受任何第三方的授意或影响。此外，作者薪酬的任何部分不与本报告中的具体推荐意见或观点直接或间接相关。",
+            "rerank_score": 0.5108327299032832,
+            "origin_score": 0.8149960041046143
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604231821486076_1.pdf?1776942645000.pdf",
+            "display_name": "计算机行业点评：国产超节点大势所趋",
+            "preview": "# 计算机行业点评",
+            "rerank_score": 0.5073850117847136,
+            "origin_score": 0.8133201897144318
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604231821486076_1.pdf?1776942645000.pdf",
+            "display_name": "计算机行业点评：国产超节点大势所趋",
+            "preview": "计算机行业点评报告\n\n2026年04月23日\n\n投资评级：看好 (维持)",
+            "rerank_score": 0.4924170304148979,
+            "origin_score": 0.7814671695232391
+        }
+    ],
+    "cache_hit": false
+  },
+  {
+    "id": "tr_b4af39bc",
+    "question": "3月挖掘机销量数据如何，工程机械行业当前的投资评级是什么？",
+    "answer": "## 3 月挖掘机销量概况  \n\n- **总销量**：2026 年 3 月挖掘机销量为 **37 402 台**。  \n- **同比增长**：较 2025 年同月增长 **26.40 %**。  \n- **环比增长**：较 2026 年 2 月环比提升 **117.13 %**。  \n\n### 细分市场  \n| 区域 | 销量（台） | 同比增速 | 环比增速 |\n|------|------------|----------|----------|\n| 国内 | 24 101 | 23.49 % | 256.79 % |\n| 出口 | 13 301 | 32.05 % | 27.03 % |\n\n- **出口占比**：约 **35.56 %**（出口 13 301 台 / 总销量 37 402 台）。  \n- **行业景气度**：2026 年第一季度累计销量 73 336 台，同比增长 19.49 %，显示行业整体回升。\n\n## 工程机械行业的投资评级现状  \n\n当前可用的材料仅提供了行业投资评级的定义（如“强于大市”“同步大市”“弱于大市”），但未给出针对工程机械行业的具体评级结论。因此，**没有可引用的明确评级** 可供报告。若需最新评级，请参考后续的行业研究报告或评级机构的最新发布。",
+    "intent": "query",
+    "route": "mix",
+    "total_latency_ms": 42333,
+    "status": "success",
+    "created_at": "2026-04-25T10:35:30.728890+00:00",
+    "user": "api_user",
+    "error": {},
+    "spans": [
+        {
+            "name": "intent",
+            "start_ms": 10,
+            "end_ms": 7142,
+            "input": "3月挖掘机销量数据如何，工程机械行业当前的投资评级是什么？",
+            "output": null,
+            "detail": "{\"intent_type\": \"knowledge\", \"intent_label\": \"数据查询\", \"score\": 0.9, \"candidates\": [{\"label\": \"数据查询\", \"score\": 0.9, \"domain\": \"research\"}], \"entities\": {\"company\": [], \"industry\": [\"工程机械\"], \"metric\": \"\", \"time_range\": \"3月\"}, \"requires_aggregation\": false, \"intents\": [\"数据查询\", \"观点评级\"], \"intent_items\": [{\"intent\": \"数据查询\", \"query\": \"3月挖掘机销量数据如何？\"}, {\"intent\": \"观点评级\", \"query\": \"工程机械行业当前的投资评级是什么？\"}], \"industry\": \"other\", \"industry_confidence\": 0.9, \"raw_question\": \"3月挖掘机销量数据如何，工程机械行业当前的投资评级是什么？\", \"has_image\": false, \"intents_count\": 2, \"intent_items_count\": 2, \"routing\": {\"layer1\": \"kb_search\", \"legacy_strategy\": \"directed_global_mix\", \"scopes\": [\"directed\", \"global\"], \"method\": \"hybrid\", \"retriever\": \"hybrid\", \"top_k\": 5, \"rerank\": false, \"sort_by\": \"\", \"tip\": \"优先匹配实体+指标名\", \"legacy_scope_aliases\": {\"directed_only\": \"directed\", \"industry_only\": \"directed\", \"global_only\": \"global\", \"directed_global_mix\": \"directed + global\"}}}"
+        },
+        {
+            "name": "rewrite",
+            "start_ms": 7142,
+            "end_ms": 24711,
+            "input": "3月挖掘机销量数据如何，工程机械行业当前的投资评级是什么？",
+            "output": "3月挖掘机销量（台数）及同比/环比变化如何？",
+            "detail": "{\"rewrite\": \"3月挖掘机销量（台数）及同比/环比变化如何？\", \"should_split\": true, \"sub_questions\": [\"3月挖掘机销量数据如何？\", \"工程机械行业当前的投资评级是什么？\"], \"input_intent_items\": [{\"intent\": \"数据查询\", \"query\": \"3月挖掘机销量数据如何？\"}, {\"intent\": \"观点评级\", \"query\": \"工程机械行业当前的投资评级是什么？\"}], \"intent_sub_questions\": [{\"intent\": \"数据查询\", \"query\": \"3月挖掘机销量数据如何？\"}, {\"intent\": \"观点评级\", \"query\": \"工程机械行业当前的投资评级是什么？\"}]}"
+        },
+        {
+            "name": "retrieval",
+            "start_ms": 24711,
+            "end_ms": 33543,
+            "input": "3月挖掘机销量数据如何？ | 工程机械行业当前的投资评级是什么？",
+            "output": null,
+            "detail": "{\"retrieved_count\": 9, \"retrieved_total_before_dedup\": 10, \"deduped_count\": 9, \"merged_params\": {\"top_k\": 10, \"rerank\": true, \"sort_by\": \"\"}, \"strategy\": \"intent_items\", \"query_count\": 2, \"queries\": [\"3月挖掘机销量数据如何？\", \"工程机械行业当前的投资评级是什么？\"], \"execution_details\": [{\"intent\": \"数据查询\", \"query\": \"3月挖掘机销量数据如何？\", \"scopes\": [\"directed\", \"global\"], \"method\": \"hybrid\", \"top_k\": 5, \"rerank\": false, \"sort_by\": \"\", \"legacy_strategy\": \"directed_global_mix\"}, {\"intent\": \"观点评级\", \"query\": \"工程机械行业当前的投资评级是什么？\", \"scopes\": [\"directed\"], \"method\": \"vector\", \"top_k\": 10, \"rerank\": true, \"sort_by\": \"date_desc\", \"legacy_strategy\": \"directed_only\"}], \"source_strategy\": \"directed_global_mix\"}"
+        },
+        {
+            "name": "rerank",
+            "start_ms": 33543,
+            "end_ms": 33543,
+            "input": null,
+            "output": null,
+            "detail": "{\"mode\": \"integrated_in_retrieval\"}"
+        },
+        {
+            "name": "generate",
+            "start_ms": 33543,
+            "end_ms": 42323,
+            "input": "3月挖掘机销量数据如何，工程机械行业当前的投资评级是什么？",
+            "output": null,
+            "detail": null
+        }
+    ],
+    "chunks": [
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821383506_1.pdf?1776792895000.pdf",
+            "display_name": "工程机械行业跟踪点评：3月挖机销量同环比高增，行业景气度稳步回升",
+            "preview": "图1展示挖掘机月度销量及同比增速趋势，红色柱状图代表月销量（单位：台），黄色折线图表示同比增速（单位：%），时间跨度为2015年1月至2025年11月。关键数据显示，2026年3月挖掘机销量达37402台，同比增长26.40%，环比大幅增长117.13%；其中国内销量24101台，同比增长23.49%，环比增长256.79%，出口销量13301台，同比增长32.05%，环比增长27.03%，出口占比35.56%。2026年第一季度累计销量73336台，同比增长19.49%，行",
+            "rerank_score": 0.9088566601276398,
+            "origin_score": 0.9088566601276398
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821383506_1.pdf?1776792895000.pdf",
+            "display_name": "工程机械行业跟踪点评：3月挖机销量同环比高增，行业景气度稳步回升",
+            "preview": "# 事件：\n\n\n中国工程机械工业协会公布 2026 年3月挖掘机、装载机销量数据。",
+            "rerank_score": 0.8938683867454529,
+            "origin_score": 0.8938683867454529
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821383506_1.pdf?1776792895000.pdf",
+            "display_name": "工程机械行业跟踪点评：3月挖机销量同环比高增，行业景气度稳步回升",
+            "preview": "# 3月挖机销量同环比高增，行业景气度稳步回升\n\n\n工程机械行业跟踪点评\n\n2026年4月21日\n\n分析师：谢少威（SAC 执业证书编号：S0340523010003）\n\n电话：0769-22119430 邮箱：xieshaowei@dgzq.com.cn",
+            "rerank_score": 0.8830592930316925,
+            "origin_score": 0.8830592930316925
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821396804_1.pdf?1776843942000.pdf",
+            "display_name": "商贸零售：26年3月社零数据如何？",
+            "preview": "# 投资要点\n\n\n基数较高+季节性因素，增速回落。3月社零数据增速1.7%，较上月放缓1.1pct，除汽车外的消费增速3.2%，较上月放缓0.5pct；1-3月社零数据增速2.4%，较上季度加快0.7pct。受上年同期基数较高、春节等季节性因素影响，增速环比降速。\n\n（1）城乡拆分：乡村市场销售快于城镇。3月份，城镇同比增长1.5%，乡村增长2.7%，乡村市场销售依旧快于城镇1.2pct，去年下半年以来乡村持续快于城镇。县域商业体系建设稳步推进，县乡市场供给持续改善，市场活力",
+            "rerank_score": 0.796974778175354,
+            "origin_score": 0.796974778175354
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821396804_1.pdf?1776843942000.pdf",
+            "display_name": "商贸零售：26年3月社零数据如何？",
+            "preview": "# 事件\n\n\n国家统计局发布最新社零数据，3月份，社会消费品零售总额41616亿元，同比增长1.7%。其中，除汽车以外的消费品零售额37875亿元，增长3.2%。1—3月份，社会消费品零售总额127695亿元，同比增长2.4%。其中，除汽车以外的消费品零售额117727亿元，增长3.6%。",
+            "rerank_score": 0.7916523516178131,
+            "origin_score": 0.7916523516178131
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821396804_1.pdf?1776843942000.pdf",
+            "display_name": "商贸零售：26年3月社零数据如何？",
+            "preview": "# 行业投资评级",
+            "rerank_score": 0.5934167759575469,
+            "origin_score": 0.8717601299285889
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604191821320317_1.pdf",
+            "display_name": "医药生物行业快评报告：健全药品价格形成机制，支持高水平创新药",
+            "preview": "# 行业投资评级\n\n\n强于大市：未来6个月内行业指数相对大盘涨幅10%以上;  \n同步大市：未来6个月内行业指数相对大盘涨幅10%至-10%之间;  \n弱于大市：未来6个月内行业指数相对大盘跌幅10%以上。",
+            "rerank_score": 0.5925991359790718,
+            "origin_score": 0.8186100125312805
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604221821429856_1.pdf?1776852132000.pdf",
+            "display_name": "医药生物行业周报：国办发文健全药品价格形成机制，关注创新药主题",
+            "preview": "# 公司业务资格说明\n\n\n本公司具备证券投资咨询业务资格。\n\n投资评级体系与评级定义  \n\n<table><tr><td>股票投资评级：</td><td>分析师给出下列评级中的其中一项代表其根据公司基本面及（或）估值预期以报告日起6个月 内公司股价相对于同期市场基准指数表现的看法。</td></tr><tr><td></td><td>买入 股价表现将强于基准指数20%以上</td></tr><tr><td></td><td>增持 股价表现将强于基准指数5-20%</td></",
+            "rerank_score": 0.5154985370201852,
+            "origin_score": 0.7969911396503448
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604221821430476_1.pdf",
+            "display_name": "计算机行业周报-Token暴增推动估值重构：从“卖算力”到“卖Token”",
+            "preview": "# 公司业务资格说明\n\n\n本公司具备证券投资咨询业务资格。\n\n投资评级体系与评级定义  \n\n<table><tr><td>股票投资评级：</td><td colspan=\"2\">分析师给出下列评级中的其中一项代表其根据公司基本面及（或）估值预期以报告日起6个月 内公司股价相对于同期市场基准指数表现的看法。</td></tr><tr><td></td><td>买入</td><td>股价表现将强于基准指数20%以上</td></tr><tr><td></td><td>增持</td",
+            "rerank_score": 0.4868179596481328,
+            "origin_score": 0.7964111864566803
+        }
+    ],
+    "cache_hit": false
+  },
+  {
+    "id": "tr_4a9b876e",
+    "question": "26年3月社零数据增速是多少，消费行业后续的政策催化剂有哪些？",
+    "answer": "**26年3月社零数据增速**  \n- 社会消费品零售总额同比增长 **1.7%**（环比出现 1.1pct 的放缓）。\n\n---\n\n### 消费行业后续的政策催化剂\n\n1. **专项财政资金与国债支持**  \n   - 2026 年将安排 **超长期特别国债 2500 亿元**，用于支持消费品以旧换新。  \n   - 同时设立 **1000 亿元财政金融协同促内需专项资金**，加大对消费需求的财政拉动。\n\n2. **服务消费政策陆续出台**  \n   - “十五五”规划及 2026 年政府工作报告均把 **扩大内需、提升服务消费** 放在首位。  \n   - 相关政策包括对高技术、现代服务业的引导，以及对服务业质量提升的专项扶持。\n\n3. **《关于推进服务业扩能提质的意见》**（2026‑04‑21）  \n   - 目标到 2030 年服务业规模突破 **100 万亿元**，强调 **科技服务支撑、软件与信息服务创新**，为服务业提供长期增长动能。\n\n4. **消费补贴与稳收入政策**  \n   - 短期将通过 **补贴类政策**（如以旧换新补贴）刺激消费。  \n   - 中长期则侧重 **稳收入、提升居民消费信心** 的政策体系，帮助消费回暖进入螺旋上升阶段。\n\n5. **行业细分方向的政策倾斜**  \n   - 对 **新消费赛道**（潮玩、黄金珠宝、新茶饮等）以及 **顺周期赛道**（白酒、餐酒旅、服务消费公司）提供政策支持，形成差异化的增长驱动。\n\n这些政策组合形成了从财政资金、专项债务、宏观规划到行业细分的多层次催化体系，预计将在 2026 年后持续推动消费需求回升。",
+    "intent": "query",
+    "route": "mix",
+    "total_latency_ms": 25738,
+    "status": "success",
+    "created_at": "2026-04-25T10:33:39.266352+00:00",
+    "user": "api_user",
+    "error": {},
+    "spans": [
+        {
+            "name": "intent",
+            "start_ms": 77,
+            "end_ms": 6256,
+            "input": "26年3月社零数据增速是多少，消费行业后续的政策催化剂有哪些？",
+            "output": null,
+            "detail": "{\"intent_type\": \"knowledge\", \"intent_label\": \"数据查询\", \"score\": 0.9, \"candidates\": [{\"label\": \"数据查询\", \"score\": 0.9, \"domain\": \"research\"}], \"entities\": {\"company\": [], \"industry\": [\"消费\"], \"metric\": \"增速\", \"time_range\": \"2026年3月\"}, \"requires_aggregation\": false, \"intents\": [\"数据查询\", \"行业研究\"], \"intent_items\": [{\"intent\": \"数据查询\", \"query\": \"26年3月社零数据增速是多少？\"}, {\"intent\": \"行业研究\", \"query\": \"消费行业后续的政策催化剂有哪些？\"}], \"industry\": \"consumer\", \"industry_confidence\": 0.95, \"raw_question\": \"26年3月社零数据增速是多少，消费行业后续的政策催化剂有哪些？\", \"has_image\": false, \"intents_count\": 2, \"intent_items_count\": 2, \"routing\": {\"layer1\": \"kb_search\", \"legacy_strategy\": \"directed_global_mix\", \"scopes\": [\"directed\", \"global\"], \"method\": \"hybrid\", \"retriever\": \"hybrid\", \"top_k\": 5, \"rerank\": false, \"sort_by\": \"\", \"tip\": \"优先匹配实体+指标名\", \"legacy_scope_aliases\": {\"directed_only\": \"directed\", \"industry_only\": \"directed\", \"global_only\": \"global\", \"directed_global_mix\": \"directed + global\"}}}"
+        },
+        {
+            "name": "rewrite",
+            "start_ms": 6257,
+            "end_ms": 12007,
+            "input": "26年3月社零数据增速是多少，消费行业后续的政策催化剂有哪些？",
+            "output": "26年3月社零数据增速是多少，消费行业后续的政策催化剂有哪些？",
+            "detail": "{\"rewrite\": \"26年3月社零数据增速是多少，消费行业后续的政策催化剂有哪些？\", \"should_split\": true, \"sub_questions\": [\"26年3月社零数据增速是多少？\", \"消费行业后续的政策催化剂有哪些？\"], \"input_intent_items\": [{\"intent\": \"数据查询\", \"query\": \"26年3月社零数据增速是多少？\"}, {\"intent\": \"行业研究\", \"query\": \"消费行业后续的政策催化剂有哪些？\"}], \"intent_sub_questions\": [{\"intent\": \"数据查询\", \"query\": \"26年3月社零数据增速是多少？\"}, {\"intent\": \"行业研究\", \"query\": \"消费行业后续的政策催化剂有哪些？\"}]}"
+        },
+        {
+            "name": "retrieval",
+            "start_ms": 12007,
+            "end_ms": 13093,
+            "input": "26年3月社零数据增速是多少？ | 消费行业后续的政策催化剂有哪些？",
+            "output": null,
+            "detail": "{\"retrieved_count\": 9, \"retrieved_total_before_dedup\": 10, \"deduped_count\": 9, \"merged_params\": {\"top_k\": 15, \"rerank\": true, \"sort_by\": \"\"}, \"strategy\": \"intent_items\", \"query_count\": 2, \"queries\": [\"26年3月社零数据增速是多少？\", \"消费行业后续的政策催化剂有哪些？\"], \"execution_details\": [{\"intent\": \"数据查询\", \"query\": \"26年3月社零数据增速是多少？\", \"scopes\": [\"directed\", \"global\"], \"method\": \"hybrid\", \"top_k\": 5, \"rerank\": false, \"sort_by\": \"\", \"legacy_strategy\": \"directed_global_mix\"}, {\"intent\": \"行业研究\", \"query\": \"消费行业后续的政策催化剂有哪些？\", \"scopes\": [\"directed\"], \"method\": \"vector\", \"top_k\": 15, \"rerank\": true, \"sort_by\": \"\", \"legacy_strategy\": \"directed_only\"}], \"source_strategy\": \"directed_global_mix\"}"
+        },
+        {
+            "name": "rerank",
+            "start_ms": 13093,
+            "end_ms": 13093,
+            "input": null,
+            "output": null,
+            "detail": "{\"mode\": \"integrated_in_retrieval\"}"
+        },
+        {
+            "name": "generate",
+            "start_ms": 13093,
+            "end_ms": 25715,
+            "input": "26年3月社零数据增速是多少，消费行业后续的政策催化剂有哪些？",
+            "output": null,
+            "detail": null
+        }
+    ],
+    "chunks": [
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821396804_1.pdf?1776843942000.pdf",
+            "display_name": "商贸零售：26年3月社零数据如何？",
+            "preview": "# 3月社零数据成色如何？我们认为：\n\n\n（1）整体来看：季节性影响增速回落，服务消费依旧亮眼。3月社零数据增速1.7%,较上月放缓1.1pct，除汽车外的消费增速3.2%，较上月放缓0.5pct；1-3月社零数据增速2.4%，较上季度加快0.7pct。受上年同期基数较高、春节等季节性因素影响，增速环比降速。此外，餐饮好于商品，服务消费亮眼。\n\n(2）两个特点：必选一定回暖，可选继续分化（国补影响减小，提价影响增大)。3月数据出现一定回落，必选可选均有一定回落，拆分来看，一方",
+            "rerank_score": 0.8658160865306854,
+            "origin_score": 0.8658160865306854
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821396804_1.pdf?1776843942000.pdf",
+            "display_name": "商贸零售：26年3月社零数据如何？",
+            "preview": "# 事件\n\n\n国家统计局发布最新社零数据，3月份，社会消费品零售总额41616亿元，同比增长1.7%。其中，除汽车以外的消费品零售额37875亿元，增长3.2%。1—3月份，社会消费品零售总额127695亿元，同比增长2.4%。其中，除汽车以外的消费品零售额117727亿元，增长3.6%。",
+            "rerank_score": 0.8573474586009979,
+            "origin_score": 0.8573474586009979
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821396804_1.pdf?1776843942000.pdf",
+            "display_name": "商贸零售：26年3月社零数据如何？",
+            "preview": "# 投资要点\n\n\n基数较高+季节性因素，增速回落。3月社零数据增速1.7%，较上月放缓1.1pct，除汽车外的消费增速3.2%，较上月放缓0.5pct；1-3月社零数据增速2.4%，较上季度加快0.7pct。受上年同期基数较高、春节等季节性因素影响，增速环比降速。\n\n（1）城乡拆分：乡村市场销售快于城镇。3月份，城镇同比增长1.5%，乡村增长2.7%，乡村市场销售依旧快于城镇1.2pct，去年下半年以来乡村持续快于城镇。县域商业体系建设稳步推进，县乡市场供给持续改善，市场活力",
+            "rerank_score": 0.8337477743625641,
+            "origin_score": 0.8337477743625641
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604221821450790_1.pdf",
+            "display_name": "通信行业快评报告：以科技服务和创新技术推进服务业扩能提质",
+            "preview": "图表展示通信行业指数与沪深300指数在2025年4月22日至2026年3月22日期间的相对表现，通信指数累计涨幅约170%，显著高于沪深300指数的约20%涨幅，反映通信行业在政策支持下强势跑赢大盘。此表现与报告中强调的5G规模化应用及卫星互联网发展等科技服务赋能生产性服务业的主题高度契合，凸显创新技术推动行业增长的成效。",
+            "rerank_score": 0.7996065020561218,
+            "origin_score": 0.7996065020561218
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821383506_1.pdf?1776792895000.pdf",
+            "display_name": "工程机械行业跟踪点评：3月挖机销量同环比高增，行业景气度稳步回升",
+            "preview": "图1展示挖掘机月度销量及同比增速趋势，红色柱状图代表月销量（单位：台），黄色折线图表示同比增速（单位：%），时间跨度为2015年1月至2025年11月。关键数据显示，2026年3月挖掘机销量达37402台，同比增长26.40%，环比大幅增长117.13%；其中国内销量24101台，同比增长23.49%，环比增长256.79%，出口销量13301台，同比增长32.05%，环比增长27.03%，出口占比35.56%。2026年第一季度累计销量73336台，同比增长19.49%，行",
+            "rerank_score": 0.7972961068153381,
+            "origin_score": 0.7972961068153381
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604211821396804_1.pdf?1776843942000.pdf",
+            "display_name": "商贸零售：26年3月社零数据如何？",
+            "preview": "# 投资建议及关注标的\n\n\n我们认为消费复苏的过程是曲折的，是螺旋上升的，消费最差的时候已经过去。未来随着消费政策的推出，居民收入和消费信心将逐步恢复，但是消费回暖依旧是个缓慢的过程，消费短期将受益于补贴类政策，中长期将受益于稳收入等政策。\n\n基于我们以上分析及判断，我们中短期看好政策相关板块机会，中长期看好两类消费的长期机会。中长期我们建议关注攻守兼备两类机会：\n\n攻之新消费机会：潮玩、黄金珠宝、新茶饮等赛道建议积极关注，一方面符合当下消费个性化、悦己化等趋势，另一方面文化",
+            "rerank_score": 0.6393286372874595,
+            "origin_score": 0.8402498960494995
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604221821430476_1.pdf",
+            "display_name": "计算机行业周报-Token暴增推动估值重构：从“卖算力”到“卖Token”",
+            "preview": "# 风险提示\n\n\n下游景气度不及预期；政策推进不及预期；技术创新不及预期、行业竞争加剧。",
+            "rerank_score": 0.49558949954380777,
+            "origin_score": 0.7585582137107849
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604221821450790_1.pdf",
+            "display_name": "通信行业快评报告：以科技服务和创新技术推进服务业扩能提质",
+            "preview": "# 行业核心观点：\n\n\n2026年4月21日，国务院发布《关于推进服务业扩能提质的意见》（以下简称《意见》)，目标到2030年，服务业高质量发展取得明显进展，服务业总规模迈上100万亿元台阶，质量更高、结构更优、品质更佳、活力更足的发展格局基本形成，培育更多“中国服务”品牌，服务业全球竞争力、影响力明显增强，人民群众获得感持续提升。在“全链条补强生产性服务业薄弱环节”这一意见中，《意见》提出要“强化科技服务支撑作用”、“加快软件和信息服务创新发展”。",
+            "rerank_score": 0.48837325518069674,
+            "origin_score": 0.7870083153247833
+        },
+        {
+            "file": "https://pdf.dfcfw.com/pdf/H3_AP202604191821320317_1.pdf",
+            "display_name": "医药生物行业快评报告：健全药品价格形成机制，支持高水平创新药",
+            "preview": "# 行业核心观点：\n\n\n为进一步推进药品价格合理形成、加强药品价格治理、支持医药产业创新发展，近日，国务院办公厅印发了《关于健全药品价格形成机制的若干意见》。《意见》坚持以人民为中心的发展思想，充分发挥市场在资源配置中的决定性作用，更好发挥政府作用，健全以市场为主导的药品价格形成机制，支持医药产业高质量发展，保障人民群众获得质优价宜的药品。",
+            "rerank_score": 0.4648655326664208,
+            "origin_score": 0.748533084988594
+        }
+    ],
+    "cache_hit": false
+  }
+  ]
+}

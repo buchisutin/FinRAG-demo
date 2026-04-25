@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+  <defs>
+    <linearGradient id="bg" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#FAF3E4"/>
+      <stop offset="100%" stop-color="#DEC99A"/>
+    </linearGradient>
+    <linearGradient id="ov" x1="21%" y1="5%" x2="76%" y2="100%">
+      <stop offset="0%" stop-color="#8B4513" stop-opacity="0.12"/>
+      <stop offset="79%" stop-color="#8B4513" stop-opacity="0.03"/>
+    </linearGradient>
+    <clipPath id="c"><rect width="160" height="160" rx="36"/></clipPath>
+  </defs>
+  <rect width="160" height="160" rx="36" fill="url(#bg)"/>
+  <rect width="160" height="160" rx="36" fill="url(#ov)"/>
+  <g clip-path="url(#c)">
+    <polyline points="0,155 30,128 60,138 90,108 120,92 160,70"
+      fill="none" stroke="#8B4513" stroke-width="4"
+      stroke-linecap="round" stroke-linejoin="round" opacity="0.13"/>
+  </g>
+  <text x="80" y="128"
+    text-anchor="middle"
+    font-family="Georgia, serif"
+    font-size="100" font-weight="700"
+    fill="#8B4513" opacity="0.88">R</text>
+</svg>

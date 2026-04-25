@@ -1,0 +1,3021 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Console - 报告库</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="/assets/shell.css" />
+    <style>
+        :root {
+            --bg-app:         #EAE7E0;
+            --bg-sidebar:     #E2DED6;
+            --bg-panel:       #F2F0EC;
+            --bg-hover:       #E8E5DE;
+            --bg-gray-layer:  #E8E5DE;
+            --bg-sources:     #E8E5DE;
+            --border:         #C9C5BC;
+            --border-subtle:  #D8D4CC;
+            --accent:         #8B4513;
+            --accent-light:   #F0E6DC;
+            --accent-muted:   #B8784A;
+            --accent-dark:    #5C2D0A;
+            --btn-primary-bg: #2C2A24;
+            --btn-primary-fg: #F2F0EC;
+            --text-primary:   #2C2A24;
+            --text-secondary: #5A5449;
+            --text-muted:     #9A9287;
+            --success:        #6B7C45;
+            --success-light:  #E8EDD8;
+            --warning:        #8A6E2A;
+            --warning-light:  #F0E8D4;
+            --danger:         #8C3A2A;
+            --danger-light:   #F5E4E0;
+        }
+        * { box-shadow: none !important; }
+
+        .kb-workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: var(--bg-app);
+            padding: 10px;
+            gap: 10px;
+        }
+
+        .kb-panel {
+            width: 220px;
+            background: var(--bg-sidebar);
+            border-radius: 12px;
+            border: none;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .doc-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background: transparent;
+            padding: 0;
+        }
+
+        .nav-sidebar {
+            border-right: none !important;
+        }
+
+        .kb-panel-header {
+            padding: 16px 14px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 0.5px solid var(--border-subtle);
+        }
+        .kb-panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .btn-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--r-sm);
+            transition: background 0.2s;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .btn-icon:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+        .kb-list { flex: 1; overflow-y: auto; padding: 8px 0; display: flex; flex-direction: column; gap: 2px; }
+        .kb-card {
+            padding: 10px 12px;
+            margin: 0 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            border-left: 2px solid transparent;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+        .kb-card:hover { background: var(--bg-hover); }
+        .kb-card.active {
+            background: var(--bg-panel);
+            border-left-color: var(--accent);
+        }
+        .kb-card-header { display: flex; justify-content: space-between; align-items: center; }
+        .kb-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 130px;
+        }
+        .badge {
+            font-size: 10px;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 400;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+        .badge-active     { background: var(--success-light); color: var(--success); }
+        .badge-inactive   { background: var(--bg-hover); color: var(--text-muted); }
+        .badge-processing { background: var(--warning-light); color: var(--warning); }
+        .badge-failed     { background: var(--danger-light); color: var(--danger); }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            gap: 16px;
+        }
+        .empty-icon {
+            width: 48px;
+            height: 48px;
+            flex: 0 0 48px;
+            color: var(--border);
+        }
+        .doc-container {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            background: transparent;
+        }
+        .chunk-container {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            background: transparent;
+        }
+        #chunk-batch-bar {
+            padding: 8px 20px;
+            background: var(--accent-light);
+            border-bottom: 0.5px solid var(--border);
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        #chunk-batch-bar .btn-icon {
+            width: auto;
+            height: auto;
+            padding: 4px 10px;
+            font-size: 12px;
+            white-space: nowrap;
+            border-radius: 6px;
+            color: var(--text-secondary);
+        }
+        #chunk-batch-bar .btn-icon[style*="color:var(--danger)"],
+        #chunk-batch-bar .btn-icon[style*="color: var(--danger)"] {
+            color: var(--danger);
+        }
+        #chunk-prev-btn,
+        #chunk-next-btn {
+            width: auto;
+            height: auto;
+            padding: 4px 10px;
+            font-size: 12px;
+            white-space: nowrap;
+            border-radius: 6px;
+        }
+        #chunk-table .cell-actions {
+            white-space: nowrap;
+        }
+        #chunk-prev-btn:disabled,
+        #chunk-next-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .toolbar {
+            background: transparent;
+            border-bottom: 0.5px solid var(--border-subtle);
+            padding: 12px 16px;
+            margin: 0 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
+            min-width: 0;
+        }
+        .breadcrumb {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 0 0 auto;
+            white-space: nowrap;
+        }
+        #chunk-kb-name,
+        .breadcrumb-sep {
+            flex: 0 0 auto;
+        }
+        #chunk-doc-name {
+            display: inline-block;
+            flex: 1 1 auto;
+            min-width: 0;
+            max-width: 540px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: bottom;
+        }
+
+        .search-box {
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 190px;
+        }
+        .search-box input { flex: 1; color: var(--text-primary); background: none; border: none; outline: none; font-size: 13px; }
+        .search-box input::placeholder { color: var(--text-muted); }
+
+        .select-box {
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 6px 10px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--btn-primary-bg);
+            border-radius: 8px;
+            font-size: 12px;
+            padding: 6px 14px;
+            color: var(--btn-primary-fg);
+            font-weight: 500;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary:hover { background: #3E3B34; }
+
+        .upload-area {
+            background: transparent;
+            padding: 12px 16px;
+            border-bottom: 0.5px solid var(--border-subtle);
+            display: none;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .drop-zone {
+            background: var(--bg-panel);
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            padding: 28px 20px;
+            text-align: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+        .upload-list { display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto; }
+        .upload-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 7px 10px;
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 7px;
+            font-size: 12px;
+        }
+        .progress-bar-bg { flex: 1; height: 4px; background: var(--border-subtle); border-radius: 2px; margin: 0 14px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease; }
+
+        .table-wrapper {
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 12px;
+            margin: 12px 16px;
+            padding: 0 16px 16px;
+            overflow: auto;
+            flex: 1;
+        }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th {
+            position: sticky;
+            top: 0;
+            background: var(--bg-panel);
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: .03em;
+            padding: 12px 8px 10px;
+            border-bottom: 0.5px solid var(--border);
+            z-index: 1;
+        }
+        td {
+            padding: 10px 8px;
+            font-size: 12px;
+            color: var(--text-primary);
+            border-bottom: 0.5px solid var(--border-subtle);
+        }
+        th, td { vertical-align: middle; }
+        th:nth-child(4), td:nth-child(4) { width: 110px; min-width: 110px; }
+        th:last-child, td:last-child { width: 140px; min-width: 140px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--bg-hover); }
+        td.cell-actions { color: var(--text-muted); white-space: nowrap; vertical-align: middle; }
+        .cell-actions .action-link + .action-link { margin-left: 10px; }
+        .action-link {
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 12px;
+            color: var(--text-muted);
+            display: inline-flex;
+            align-items: center;
+            line-height: 1.2;
+        }
+        .action-link:hover { color: var(--text-primary); }
+        .action-link.danger:hover { color: var(--danger); }
+        td[onclick] { color: var(--accent); }
+
+        .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+        .toast {
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: var(--r-md);
+            font-size: 13px;
+            opacity: 0;
+            animation: fade-in-out 3s ease forwards;
+        }
+        .toast.error   { border-color: var(--danger); color: var(--danger); }
+        .toast.success { border-color: var(--success); color: var(--success); }
+        @keyframes fade-in-out {
+            0%   { opacity: 0; transform: translateY(-10px); }
+            10%  { opacity: 1; transform: translateY(0); }
+            90%  { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        .dialog-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(20, 26, 18, 0.35);
+            z-index: 1200;
+            padding: 20px;
+        }
+        .dialog-card {
+            width: min(460px, 100%);
+            background: var(--bg-panel);
+            border: 0.5px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 18px 14px;
+        }
+        .dialog-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        .dialog-message {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 12px;
+            white-space: pre-wrap;
+        }
+        .dialog-input {
+            width: 100%;
+            background: var(--bg-app);
+            border: 0.5px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            display: none;
+        }
+        .dialog-input:focus { border-color: var(--accent-muted); }
+        .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .dialog-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 7px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .dialog-btn-cancel {
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            border: 0.5px solid var(--border);
+        }
+        .dialog-btn-cancel:hover { background: var(--border-subtle); }
+        .dialog-btn-confirm {
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-fg);
+        }
+        .dialog-btn-confirm:hover { background: #3E3B34; }
+        .dialog-btn-confirm.danger {
+            background: var(--danger);
+            color: var(--danger-light);
+        }
+        .dialog-btn-confirm.danger:hover { background: var(--danger); }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1300;
+        }
+        .modal-box {
+            background: var(--bg-panel);
+            border-radius: 14px;
+            border: 0.5px solid var(--border);
+            width: 520px;
+            max-height: 80vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 20px 24px 16px;
+            border-bottom: 0.5px solid var(--border-subtle);
+        }
+        .modal-title { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+        .modal-sub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+        .modal-close {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            flex-shrink: 0;
+        }
+        .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .modal-body {
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        #crawler-section {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        #crawler-section .form-group {
+            margin: 0;
+        }
+        #process-mode-group {
+            display: none;
+        }
+        .form-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .form-select, .form-input {
+            background: var(--bg-app);
+            border: 0.5px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--text-primary);
+            outline: none;
+            width: 100%;
+        }
+        .form-select:focus, .form-input:focus { border-color: var(--accent-muted); }
+        .config-box {
+            background: var(--bg-app);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .btn-no-split {
+            padding: 8px 12px;
+            border: 0.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--bg-panel);
+            cursor: pointer;
+            white-space: nowrap;
+            align-self: flex-end;
+        }
+        .btn-no-split.active {
+            background: var(--accent-light);
+            border-color: var(--accent-muted);
+            color: var(--accent-dark);
+        }
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        #crawler-status-text {
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #crawler-count {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .progress-bg {
+            height: 4px;
+            background: var(--border-subtle);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .progress-fill { background: var(--accent); }
+        .page-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 36px;
+            background: var(--bg-app);
+            border-top: 0.5px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        .footer-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .footer-icon {
+            font-size: 14px;
+        }
+        .footer-text {
+            letter-spacing: 0.2px;
+        }
+        #app {
+            padding-bottom: 36px;
+        }
+        .crawler-log {
+            background: var(--bg-panel);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-family: var(--font-mono, monospace);
+            line-height: 1.7;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 16px 24px;
+            border-top: 0.5px solid var(--border-subtle);
+        }
+        .btn-cancel {
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: 0.5px solid var(--border);
+            background: var(--bg-hover);
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .btn-cancel:hover { background: var(--border-subtle); }
+        .btn-confirm {
+            padding: 8px 20px;
+            border-radius: 8px;
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-fg);
+            border: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .btn-confirm:hover { background: #3E3B34; }
+        .btn-confirm.danger {
+            background: var(--danger);
+            color: var(--danger-light);
+        }
+        .btn-confirm:disabled {
+            background: var(--border);
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body data-page="knowledge">
+    <div id="sidebar-mount"></div>
+    <div class="page-body">
+        <div class="kb-workspace">
+
+            <!-- Left: KB list -->
+            <aside class="kb-panel">
+                <div class="kb-panel-header">
+                    <div class="kb-panel-title">行业报告库</div>
+                </div>
+                <div class="kb-list" id="kb-list"></div>
+            </aside>
+
+            <!-- Right: doc manager -->
+            <main class="doc-panel">
+                <div class="empty-state" id="unselected-state">
+                    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    <div class="fw-500">请在左侧选择一个行业报告库</div>
+                </div>
+
+                <div class="doc-container" id="doc-container">
+                    <div class="toolbar">
+                        <div class="breadcrumb">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                            <span id="current-kb-name">行业名称</span>
+                        </div>
+                        <div class="toolbar-actions">
+                            <div class="search-box">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <input type="text" id="doc-search" placeholder="搜索文件名...">
+                            </div>
+                            <select class="select-box" id="doc-filter">
+                                <option value="all">全部状态</option>
+                                <option value="ready">已就绪</option>
+                                <option value="processing">处理中</option>
+                                <option value="failed">失败</option>
+                            </select>
+                            <button class="btn-icon" onclick="DocumentManager.loadDocs()" title="刷新">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                            </button>
+                            <button class="btn-primary" onclick="UIController.openUploadModal()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                导入报告
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="upload-area" id="upload-area"></div>
+
+                    <div class="table-wrapper">
+                        <table id="doc-table">
+                            <thead>
+                                <tr>
+                                    <th>文件名</th><th>大小</th><th>向量同步状态</th>
+                                    <th>分块数</th><th>上传时间</th><th width="140">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="doc-tbody"></tbody>
+                        </table>
+                        <div id="table-empty" class="empty-state" style="display:none; height:260px;">
+                            <div class="fw-500 text-muted">暂无报告，请导入</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chunk-container" id="chunk-container" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
+                    <div class="toolbar">
+                        <div class="breadcrumb">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            <span id="chunk-kb-name" style="color:var(--text-muted); cursor:pointer;" onclick="ChunkManager.backToDoc()">行业库</span>
+                            <span class="breadcrumb-sep" style="color:var(--text-muted); margin:0 4px;">/</span>
+                            <span id="chunk-doc-name" title="" style="color:var(--text-primary); font-size:13px;"></span>
+                        </div>
+                        <div class="toolbar-actions">
+                            <button class="btn-icon" title="返回文档列表" onclick="ChunkManager.backToDoc()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 12H5M12 5l-7 7 7 7"/>
+                                </svg>
+                            </button>
+                            <select class="select-box" id="chunk-filter-select" onchange="ChunkManager.onFilterChange()">
+                                <option value="all">全部状态</option>
+                                <option value="active">已启用</option>
+                                <option value="inactive">已停用</option>
+                            </select>
+                            <button class="btn-icon" title="刷新" onclick="ChunkManager.loadChunks()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"/>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                                </svg>
+                            </button>
+                            <button class="btn-primary" onclick="ChunkManager.openNewChunkModal()">+ 新建片段</button>
+                        </div>
+                    </div>
+
+                    <div id="chunk-batch-bar" style="display:none;">
+                        <span id="chunk-selected-count" style="font-size:12px; color:var(--accent-dark);">已选 0 项</span>
+                        <button class="btn-icon" onclick="ChunkManager.batchUpdate(true)">批量启用</button>
+                        <button class="btn-icon" onclick="ChunkManager.batchUpdate(false)">批量禁用</button>
+                        <button class="btn-icon" style="color:var(--danger);" onclick="ChunkManager.batchDelete()">批量删除</button>
+                        <button class="btn-icon" style="margin-left:auto;" onclick="ChunkManager.clearSelection()">取消选择</button>
+                    </div>
+
+                    <div class="table-wrapper" style="flex:1; overflow:auto; padding:0 20px 20px;">
+                        <table id="chunk-table" style="width:100%; border-collapse:collapse; table-layout:fixed;">
+                            <colgroup>
+                                <col style="width:36px;">
+                                <col style="width:48px;">
+                                <col>
+                                <col style="width:70px;">
+                                <col style="width:70px;">
+                                <col style="width:80px;">
+                                <col style="width:160px;">
+                                <col style="width:130px;">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="chunk-select-all" onchange="ChunkManager.toggleSelectAll(this.checked)"></th>
+                                    <th>序号</th>
+                                    <th>内容</th>
+                                    <th>状态</th>
+                                    <th>字符数</th>
+                                    <th>Token 数</th>
+                                    <th>更新时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chunk-tbody"></tbody>
+                        </table>
+                        <div id="chunk-empty" class="empty-state" style="display:none; height:200px;">
+                            <div class="fw-500 text-muted">暂无片段数据</div>
+                        </div>
+                    </div>
+
+                    <div style="padding:10px 20px; border-top:0.5px solid var(--border-subtle); display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+                        <span id="chunk-total-text" style="font-size:12px; color:var(--text-muted);"></span>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn-icon" id="chunk-prev-btn" onclick="ChunkManager.prevPage()">上一页</button>
+                            <span id="chunk-page-text" style="font-size:12px; color:var(--text-muted); padding:4px 8px;"></span>
+                            <button class="btn-icon" id="chunk-next-btn" onclick="ChunkManager.nextPage()">下一页</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <div class="dialog-backdrop" id="app-dialog-backdrop" aria-hidden="true">
+        <div class="dialog-card" role="dialog" aria-modal="true" aria-labelledby="app-dialog-title">
+            <div class="dialog-title" id="app-dialog-title"></div>
+            <div class="dialog-message" id="app-dialog-message"></div>
+            <input type="text" class="dialog-input" id="app-dialog-input" />
+            <div class="dialog-actions">
+                <button class="dialog-btn dialog-btn-cancel" id="app-dialog-cancel">取消</button>
+                <button class="dialog-btn dialog-btn-confirm" id="app-dialog-confirm">确定</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="upload-modal" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div>
+                    <div class="modal-title">导入报告</div>
+                    <div class="modal-sub">支持本地文件或东方财富研报爬取</div>
+                </div>
+                <button class="modal-close" onclick="UIController.closeUploadModal()">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M2 2L12 12M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">来源类型</label>
+                    <select class="form-select" id="source-type" onchange="UIController.onSourceTypeChange()">
+                        <option value="local">本地文件</option>
+                        <option value="eastmoney">东方财富研报</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">导入至</label>
+                    <div style="font-size:13px; color:var(--text-primary); padding:8px 12px; background:var(--bg-app); border-radius:8px; border:0.5px solid var(--border);">
+                        <span id="upload-industry-label">科技</span>
+                    </div>
+                </div>
+
+                <div id="local-section">
+                    <div class="form-group">
+                        <label class="form-label">意图归属（必选）</label>
+                        <select class="form-select" id="upload-intent-id">
+                            <option value="" disabled selected>请选择意图归属</option>
+                        </select>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                            请选择二级意图（叶子节点），用于本地上传文档归类
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">本地文件</label>
+                        <div class="drop-zone" id="drop-zone">
+                            <div class="fw-500" style="color:var(--text-primary);margin-bottom:6px;">
+                                点击或将文件拖拽至此处添加文件
+                            </div>
+                            <div style="font-size:12px;">支持 PDF, DOCX, TXT, MD（单文件最大 50MB，点击“导入”后开始上传）</div>
+                            <input type="file" id="file-input" multiple style="display:none;">
+                        </div>
+                        <div class="upload-list" id="upload-list" style="margin-top:10px;"></div>
+                    </div>
+                </div>
+
+                <div id="crawler-section" style="display:none;">
+                    <div class="form-group">
+                        <label class="form-label">抓取份数</label>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <input class="form-input" type="number" id="crawler-max-reports" value="20" min="1" max="500" style="width:100px;">
+                            <span style="font-size:12px;color:var(--text-muted);">最多导入该数量的报告</span>
+                        </div>
+                    </div>
+
+                    <div id="crawler-progress" style="display:none;">
+                        <div class="progress-header">
+                            <span id="crawler-status-text" style="font-size:12px;color:var(--text-secondary);">正在爬取...</span>
+                            <span id="crawler-count" style="font-size:12px;color:var(--text-muted);">0 / 0</span>
+                        </div>
+                        <div class="progress-bg">
+                            <div class="progress-fill" id="crawler-fill" style="width:0%"></div>
+                        </div>
+                        <div class="crawler-log" id="crawler-log"></div>
+                    </div>
+                </div>
+
+                <div class="form-group" id="process-mode-group" style="display:none;">
+                    <label class="form-label">入库策略</label>
+                    <select class="form-select" id="process-mode" onchange="UIController.onProcessModeChange()">
+                        <option value="chunk">分块策略</option>
+                    </select>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="mode-hint">
+                        分块策略：直接切分入库
+                    </div>
+                </div>
+
+                <div id="chunk-config" class="config-box">
+                    <div class="form-group" style="margin-bottom:12px;">
+                        <label class="form-label">分块策略</label>
+                        <select class="form-select" id="chunk-strategy">
+                            <option value="fixed_size">固定大小</option>
+                            <option value="paragraph">按段落</option>
+                            <option value="sentence">按句子</option>
+                            <option value="heading">按标题</option>
+                        </select>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end;">
+                        <div class="form-group" style="margin-bottom:0">
+                            <label class="form-label">块大小（字符数）</label>
+                            <input class="form-input" type="number" id="chunk-size" value="512">
+                        </div>
+                        <button class="btn-no-split" id="btn-no-split" onclick="UIController.toggleNoSplit()">
+                            不分块
+                        </button>
+                        <div class="form-group" style="margin-bottom:0">
+                            <label class="form-label">重叠大小</label>
+                            <input class="form-input" type="number" id="chunk-overlap" value="128">
+                        </div>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+                        字符数，选择不分块会写入最大值
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="UIController.closeUploadModal()">取消</button>
+                <button class="btn-confirm" id="modal-confirm-btn" onclick="UIController.handleModalConfirm()">
+                    导入
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="page-footer">
+        <div class="footer-content">
+            <span class="footer-text">本 Demo 中使用的研报数据来自东方财富网站，仅用于技术演示和学习目的</span>
+        </div>
+    </div>
+
+    <div id="chunk-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:var(--bg-panel); border-radius:14px; border:0.5px solid var(--border); width:520px; max-height:80vh; overflow-y:auto; display:flex; flex-direction:column;">
+            <div style="padding:18px 24px 14px; border-bottom:0.5px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center;">
+                <span id="chunk-modal-title" style="font-size:14px; font-weight:500; color:var(--text-primary);">新建片段</span>
+                <button onclick="ChunkManager.closeModal()" style="color:var(--text-muted); background:none; border:none; cursor:pointer;">✕</button>
+            </div>
+            <div style="padding:20px 24px;">
+                <label style="font-size:12px; font-weight:500; color:var(--text-secondary); display:block; margin-bottom:8px;">片段内容</label>
+                <textarea id="chunk-modal-content" style="width:100%; min-height:200px; background:var(--bg-app); border:0.5px solid var(--border); border-radius:8px; padding:10px 12px; font-size:13px; color:var(--text-primary); line-height:1.7; resize:vertical;"></textarea>
+                <div id="chunk-modal-task" style="display:none; margin-top:12px;">
+                    <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">向量化进度</div>
+                    <div style="height:4px; background:var(--border-subtle); border-radius:2px; overflow:hidden;">
+                        <div id="chunk-modal-fill" style="height:100%; background:var(--accent); width:0%; transition:width 0.3s;"></div>
+                    </div>
+                    <div id="chunk-modal-status" style="font-size:11px; color:var(--text-muted); margin-top:4px;"></div>
+                </div>
+            </div>
+            <div style="padding:14px 24px; border-top:0.5px solid var(--border-subtle); display:flex; justify-content:flex-end; gap:10px;">
+                <button onclick="ChunkManager.closeModal()" style="padding:7px 16px; border:0.5px solid var(--border); border-radius:8px; background:var(--bg-hover); font-size:13px; color:var(--text-secondary); cursor:pointer;">取消</button>
+                <button id="chunk-modal-confirm" onclick="ChunkManager.confirmModal()" style="padding:7px 18px; background:var(--accent); color:var(--bg-panel); border:none; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer;">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/api.js"></script>
+    <script src="/assets/shell.js"></script>
+    <script>
+        const State = {
+            activeKbId: null,
+            docs: [],
+            searchQuery: '',
+            filterStatus: 'all',
+            activeDocId: null,
+            activeDocName: '',
+            chunks: [],
+            chunkFilter: 'all',
+            chunkTotal: 0,
+            chunkOffset: 0,
+            chunkLimit: 50,
+        };
+        const UploadTaskMap = new Map();
+        const CRAWLER_SESSION_KEY = 'rag.knowledge.crawler_session.v1';
+        let crawlerPollTimer = null;
+        let crawlerPollTaskId = '';
+        const INDUSTRIES = [
+            { id: "tech", label: "科技", icon: "⬡" },
+            { id: "medical", label: "医药", icon: "⬡" },
+            { id: "energy", label: "新能源", icon: "⬡" },
+            { id: "finance", label: "金融", icon: "⬡" },
+            { id: "consumer", label: "消费", icon: "⬡" },
+            { id: "other", label: "其他", icon: "⬡" },
+        ];
+
+        // Mock 文档数据（仅用于 demo 展示）
+        const MOCK_DOCS = {
+            tech: [
+                {
+                    id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    kb_id: "tech",
+                    name: "计算机行业周报-Token暴增推动估值重构：从\"卖算力\"到\"卖Token\"",
+                    display_name: "计算机行业周报-Token暴增推动估值重构：从\"卖算力\"到\"卖Token\"",
+                    size: "387.7 KB",
+                    status: "ready",
+                    chunks: 10,
+                    time: "2026-04-24T10:04:47.967797+00:00",
+                    active: true,
+                    source: "",
+                    source_type: "local",
+                    domain: "tech",
+                    intent_id: null,
+                    intent_label: "观点评级 / 投资评级",
+                },
+            ],
+            energy: [
+                {
+                    id: "8e599edca9404f248171cce2b720db4f",
+                    kb_id: "energy",
+                    name: "工程机械行业跟踪点评：3月挖机销量同环比高增，行业景气度稳步回升",
+                    display_name: "工程机械行业跟踪点评：3月挖机销量同环比高增，行业景气度稳步回升",
+                    size: "533.3 KB",
+                    status: "ready",
+                    chunks: 7,
+                    time: "2026-04-23T11:09:05.471679+00:00",
+                    active: true,
+                    source: "",
+                    source_type: "local",
+                    domain: "energy",
+                    intent_id: null,
+                    intent_label: "观点评级 / 投资评级",
+                },
+            ],
+            consumer: [
+                {
+                    id: "fa078728eb8845ea94c8294a2a3c16c8",
+                    kb_id: "consumer",
+                    name: "商贸零售：26年3月社零数据如何？",
+                    display_name: "商贸零售：26年3月社零数据如何？",
+                    size: "423.4 KB",
+                    status: "ready",
+                    chunks: 14,
+                    time: "2026-04-23T10:40:02.250804+00:00",
+                    active: true,
+                    source: "",
+                    source_type: "local",
+                    domain: "consumer",
+                    intent_id: null,
+                    intent_label: "观点评级 / 投资评级",
+                },
+            ],
+            medical: [
+                {
+                    id: "ad599cb069cd4674bdbc799b5739100f",
+                    kb_id: "medical",
+                    name: "医药生物行业周报：分级诊疗体系迎重要部署，关注基层医疗资源配置优化、服务能力提升",
+                    display_name: "医药生物行业周报：分级诊疗体系迎重要部署，关注基层医疗资源配置优化、服务能力提升",
+                    size: "379.1 KB",
+                    status: "ready",
+                    chunks: 9,
+                    time: "2026-04-24T12:02:24.814511+00:00",
+                    active: true,
+                    source: "",
+                    source_type: "local",
+                    domain: "medical",
+                    intent_id: null,
+                    intent_label: "行业研究 / 发展趋势",
+                },
+            ],
+            finance: [
+                {
+                    id: "4f99e1189c524ccba8c58f32ab5f22ac",
+                    kb_id: "finance",
+                    name: "非银金融：资本市场聚焦（十六）-从东方收购上海，看地方金融国资优化布局冲刺一流投行梯队.pdf",
+                    display_name: "非银金融：资本市场聚焦（十六）-从东方收购上海，看地方金融国资优化布局冲刺一流投行梯队",
+                    size: "358.0 KB",
+                    status: "ready",
+                    chunks: 9,
+                    time: "2026-04-23T10:18:44.539821+00:00",
+                    active: true,
+                    source: "",
+                    source_type: "local",
+                    domain: "finance",
+                    intent_id: null,
+                    intent_label: "观点评级 / 投资评级",
+                },
+            ],
+        };
+
+        // Mock 文档分块数据（仅用于 demo 展示）
+        const MOCK_CHUNKS = {
+            "e0c8c839a9a94839a35c7c5c7816163a": [
+                {
+                    id: "chunk_7134746826d043c08250d4346ade9589",
+                    kb_id: "tech",
+                    doc_id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    chunk_index: 0,
+                    content: "# Token暴增推动估值重构：从\"卖算力\"到\"卖Token\"\n\n计算机行业周报 （2026.4.13—2026.4.17)",
+                    char_count: 64,
+                    token_count: 50,
+                    active: true,
+                    updated_at: "2026-04-24T10:04:51.672544+00:00",
+                },
+                {
+                    id: "chunk_ed600f8f761745c78cd989a997dea064",
+                    kb_id: "tech",
+                    doc_id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    chunk_index: 1,
+                    content: "# 市场回顾",
+                    char_count: 6,
+                    token_count: 8,
+                    active: true,
+                    updated_at: "2026-04-24T10:04:51.672544+00:00",
+                },
+                {
+                    id: "chunk_11d93f6a695740af9d883214d6a3ca00",
+                    kb_id: "tech",
+                    doc_id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    chunk_index: 2,
+                    content: "图表展示2025年4月至2026年4月计算机行业指数与沪深300的走势对比。计算机指数（红色线）整体波动显著，最高涨幅达37%（2026年2月左右），同期沪深300（蓝色线）峰值约27%。报告期内计算机指数多数时段强于沪深300，但2026年2月后持续回调，截至2026年4月21日，计算机指数涨幅收窄至约17%，低于沪深300的约22%。关键数据包括：计算机行业指数年波动区间-2%至37%，沪深300同期波动约0%至27%，近期两者走势出现交叉反转。",
+                    char_count: 227,
+                    token_count: 231,
+                    active: true,
+                    updated_at: "2026-04-24T10:04:51.672544+00:00",
+                },
+                {
+                    id: "chunk_38f5884abb57403bbbd0c82ee5d966c7",
+                    kb_id: "tech",
+                    doc_id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    chunk_index: 3,
+                    content: "# 相关报告：\n《量子\"跃迁\"，人机\"融合\"》-2026年04月14日《大模型创新仍在加速，推动AI推理需求爆发》2026年04月14日《Token经济引燃算力需求，国产算力链有望迎来拐点》-2026年04月07日过去一周（4.13-4.17）上证综指上涨1.64%，创业板指上涨6.65%，沪深300指数上涨1.99%，计算机（申万）指数上涨3.35%，跑赢上证综指1.72个百分点。",
+                    char_count: 237,
+                    token_count: 234,
+                    active: true,
+                    updated_at: "2026-04-24T10:04:51.672544+00:00",
+                },
+                {
+                    id: "chunk_5de21ad730894a228b53e833e175adf6",
+                    kb_id: "tech",
+                    doc_id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    chunk_index: 4,
+                    content: "# 周观点\n国内外云厂商密集涨价。国内：（1）阿里：连续发布三则涨价通知。根据中国证券报微信公众号，3月18日，阿里云发布公告称，因全球AI需求爆发、供应链涨价，阿里云AI算力、存储等产品最高涨价34%。平头哥真武810E等算力卡产品上涨5%一34%，文件存储产品CPFS（智算版）上涨30%。\nToken消耗量暴增，国产算力迎来增长新机遇。日均Token调用量跨越式增长。根据新华社微信公众号综合央视新闻，刘烈宏在国新办举行的新闻发布会上表示，到今年3月，我国日均词元（Token）调用量已超过140万亿，相比2024年初的1000亿增长了1000多倍。",
+                    char_count: 1598,
+                    token_count: 1502,
+                    active: true,
+                    updated_at: "2026-04-24T10:04:51.672544+00:00",
+                },
+                {
+                    id: "chunk_327ae8815c4844d2843b33ca0e300497",
+                    kb_id: "tech",
+                    doc_id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    chunk_index: 5,
+                    content: "# 投资建议\n建议关注：（1）国产GPU：寒武纪、海光信息等；（2）超节点整机：中科曙光、浪潮信息、神州数码、拓维信息等；（3）算力租赁龙头：协创数据、宏景科技、润建股份、利通电子、盈峰环境等；（4)核心配套：华丰科技、杰华特、申菱环境、英维克、高澜股份、欧陆通、中恒电气等。",
+                    char_count: 140,
+                    token_count: 169,
+                    active: true,
+                    updated_at: "2026-04-24T10:04:51.672544+00:00",
+                },
+                {
+                    id: "chunk_97d817186cf647ea8722368ff8ff0697",
+                    kb_id: "tech",
+                    doc_id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    chunk_index: 6,
+                    content: "# 风险提示\n下游景气度不及预期；政策推进不及预期；技术创新不及预期、行业竞争加剧。",
+                    char_count: 44,
+                    token_count: 50,
+                    active: true,
+                    updated_at: "2026-04-24T10:04:51.672544+00:00",
+                },
+                {
+                    id: "chunk_fff0c99abda948afa3bff0ea13806c3f",
+                    kb_id: "tech",
+                    doc_id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    chunk_index: 7,
+                    content: "# 分析师声明\n作者具有中国证券业协会授予的证券投资咨询资格或相当的专业胜任能力，以勤勉尽责的职业态度，独立、客观地出具本报告，并保证报告采用的信息均来自合规渠道，力求清晰、准确地反映作者的研究观点，结论不受任何第三方的授意或影响。",
+                    char_count: 154,
+                    token_count: 178,
+                    active: true,
+                    updated_at: "2026-04-24T10:04:51.672544+00:00",
+                },
+                {
+                    id: "chunk_b43c5019b46249f8bd5b82499c97e4c3",
+                    kb_id: "tech",
+                    doc_id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    chunk_index: 8,
+                    content: "# 公司业务资格说明\n本公司具备证券投资咨询业务资格。\n投资评级体系与评级定义\n股票投资评级：分析师给出下列评级中的其中一项代表其根据公司基本面及（或）估值预期以报告日起6个月内公司股价相对于同期市场基准指数表现的看法。\n买入：股价表现将强于基准指数20%以上；增持：股价表现将强于基准指数5-20%；中性：股价表现将介于基准指数±5%之间；减持：股价表现将弱于基准指数5%以上。",
+                    char_count: 1020,
+                    token_count: 837,
+                    active: true,
+                    updated_at: "2026-04-24T10:04:51.672544+00:00",
+                },
+                {
+                    id: "chunk_dbb57a0fca8046358c6d524e54a3460b",
+                    kb_id: "tech",
+                    doc_id: "e0c8c839a9a94839a35c7c5c7816163a",
+                    chunk_index: 9,
+                    content: "# 免责声明\n本报告仅供上海证券有限责任公司的客户使用。本公司不会因接收人收到本报告而视其为客户。本报告版权归本公司所有，本公司对本报告保留一切权利。未经书面授权，任何机构和个人均不得对本报告进行任何形式的发布、复制、引用或转载。市场有风险，投资需谨慎。投资者不应将本报告作为投资决策的唯一参考因素，也不应当认为本报告可以取代自己的判断。",
+                    char_count: 674,
+                    token_count: 672,
+                    active: true,
+                    updated_at: "2026-04-24T10:04:51.672544+00:00",
+                },
+            ],
+            "8e599edca9404f248171cce2b720db4f": [
+                {
+                    id: "chunk_e1a01",
+                    kb_id: "energy",
+                    doc_id: "8e599edca9404f248171cce2b720db4f",
+                    chunk_index: 0,
+                    content: "# 工程机械行业跟踪点评：3月挖机销量同环比高增，行业景气度稳步回升",
+                    char_count: 58,
+                    token_count: 45,
+                    active: true,
+                    updated_at: "2026-04-23T11:09:08.000000+00:00",
+                },
+                {
+                    id: "chunk_e1a02",
+                    kb_id: "energy",
+                    doc_id: "8e599edca9404f248171cce2b720db4f",
+                    chunk_index: 1,
+                    content: "# 核心观点\n3月挖掘机销量数据同环比均实现高增长，行业景气度持续回升。根据中国工程机械工业协会数据，3月挖掘机销量同比增速显著，反映出基础设施建设需求回暖。行业开工率提升，下游需求恢复明显。",
+                    char_count: 145,
+                    token_count: 138,
+                    active: true,
+                    updated_at: "2026-04-23T11:09:08.000000+00:00",
+                },
+                {
+                    id: "chunk_e1a03",
+                    kb_id: "energy",
+                    doc_id: "8e599edca9404f248171cce2b720db4f",
+                    chunk_index: 2,
+                    content: "# 销售数据分析\n3月挖掘机内销同比增速表现亮眼，出口保持稳健增长。分结构来看，大挖增速快于小挖，反映大型工程项目开工情况良好。国产品牌市占率持续提升，龙头企业优势进一步巩固。",
+                    char_count: 132,
+                    token_count: 125,
+                    active: true,
+                    updated_at: "2026-04-23T11:09:08.000000+00:00",
+                },
+                {
+                    id: "chunk_e1a04",
+                    kb_id: "energy",
+                    doc_id: "8e599edca9404f248171cce2b720db4f",
+                    chunk_index: 3,
+                    content: "# 行业驱动因素分析\n（1）基建投资加速落地，专项债发行提速；（2）房地产政策持续优化，带动土方工程需求；（3）设备更新需求释放，国四标准切换推动存量替换。多重因素共同推动行业景气度回升。",
+                    char_count: 128,
+                    token_count: 119,
+                    active: true,
+                    updated_at: "2026-04-23T11:09:08.000000+00:00",
+                },
+                {
+                    id: "chunk_e1a05",
+                    kb_id: "energy",
+                    doc_id: "8e599edca9404f248171cce2b720db4f",
+                    chunk_index: 4,
+                    content: "# 竞争格局变化\n国产龙头品牌市场份额持续提升，三一重工、徐工机械、柳工等企业竞争优势显著。海外市场拓展加速，一带一路沿线国家需求旺盛。行业集中度进一步提高，中小企业面临竞争压力。",
+                    char_count: 126,
+                    token_count: 115,
+                    active: true,
+                    updated_at: "2026-04-23T11:09:08.000000+00:00",
+                },
+                {
+                    id: "chunk_e1a06",
+                    kb_id: "energy",
+                    doc_id: "8e599edca9404f248171cce2b720db4f",
+                    chunk_index: 5,
+                    content: "# 投资建议\n推荐关注行业龙头及核心零部件供应商。建议关注：三一重工、徐工机械、恒立液压、中联重科、柳工等。行业景气度回升背景下，龙头企业业绩弹性较大，估值修复空间充足。",
+                    char_count: 122,
+                    token_count: 110,
+                    active: true,
+                    updated_at: "2026-04-23T11:09:08.000000+00:00",
+                },
+                {
+                    id: "chunk_e1a07",
+                    kb_id: "energy",
+                    doc_id: "8e599edca9404f248171cce2b720db4f",
+                    chunk_index: 6,
+                    content: "# 风险提示\n基建投资不及预期；房地产复苏缓慢；原材料价格大幅波动；行业竞争加剧；出口增速下滑。",
+                    char_count: 56,
+                    token_count: 52,
+                    active: true,
+                    updated_at: "2026-04-23T11:09:08.000000+00:00",
+                },
+            ],
+            "fa078728eb8845ea94c8294a2a3c16c8": [
+                {
+                    id: "chunk_c1a01",
+                    kb_id: "consumer",
+                    doc_id: "fa078728eb8845ea94c8294a2a3c16c8",
+                    chunk_index: 0,
+                    content: "# 商贸零售：26年3月社零数据如何？",
+                    char_count: 35,
+                    token_count: 30,
+                    active: true,
+                    updated_at: "2026-04-23T10:40:05.000000+00:00",
+                },
+                {
+                    id: "chunk_c1a02",
+                    kb_id: "consumer",
+                    doc_id: "fa078728eb8845ea94c8294a2a3c16c8",
+                    chunk_index: 1,
+                    content: "# 核心数据概览\n26年3月社会消费品零售总额同比增速有所回升，反映出消费复苏态势延续。商品零售和餐饮收入均实现增长，线上消费占比继续提升。分品类来看，必选消费稳健，可选消费增速分化明显。",
+                    char_count: 138,
+                    token_count: 125,
+                    active: true,
+                    updated_at: "2026-04-23T10:40:05.000000+00:00",
+                },
+                {
+                    id: "chunk_c1a03",
+                    kb_id: "consumer",
+                    doc_id: "fa078728eb8845ea94c8294a2a3c16c8",
+                    chunk_index: 2,
+                    content: "# 分品类表现\n食品饮料、粮油食品等必选消费保持稳健增长。家电、汽车等可选消费受益于以旧换新政策表现较好。化妆品、金银珠宝等品类增速有所放缓。服装鞋帽消费同比小幅增长。",
+                    char_count: 118,
+                    token_count: 112,
+                    active: true,
+                    updated_at: "2026-04-23T10:40:05.000000+00:00",
+                },
+                {
+                    id: "chunk_c1a04",
+                    kb_id: "consumer",
+                    doc_id: "fa078728eb8845ea94c8294a2a3c16c8",
+                    chunk_index: 3,
+                    content: "# 渠道结构变化\n线上零售渗透率继续提升，实物商品网上零售额同比增速高于整体。直播电商、即时零售等新业态保持高速增长。线下便利店、专业店等渠道回暖，百货店增长相对平稳。",
+                    char_count: 122,
+                    token_count: 115,
+                    active: true,
+                    updated_at: "2026-04-23T10:40:05.000000+00:00",
+                },
+                {
+                    id: "chunk_c1a05",
+                    kb_id: "consumer",
+                    doc_id: "fa078728eb8845ea94c8294a2a3c16c8",
+                    chunk_index: 4,
+                    content: "# 消费趋势展望\n短期看，促消费政策持续发力，节假日消费带动效应明显。中期看，居民收入预期改善是消费持续复苏的关键。长期看，消费升级趋势不变，绿色消费、健康消费、智能消费等新趋势值得关注。",
+                    char_count: 132,
+                    token_count: 122,
+                    active: true,
+                    updated_at: "2026-04-23T10:40:05.000000+00:00",
+                },
+                {
+                    id: "chunk_c1a06",
+                    kb_id: "consumer",
+                    doc_id: "fa078728eb8845ea94c8294a2a3c16c8",
+                    chunk_index: 5,
+                    content: "# 投资建议与建议关注标的\n建议关注：（1）必选消费龙头：永辉超市、高鑫零售等；（2）可选消费标的：美的集团、海尔智家等；（3）电商及服务：拼多多、美团等；（4）品牌消费品：珀莱雅、安井食品等。",
+                    char_count: 128,
+                    token_count: 118,
+                    active: true,
+                    updated_at: "2026-04-23T10:40:05.000000+00:00",
+                },
+                {
+                    id: "chunk_c1a07",
+                    kb_id: "consumer",
+                    doc_id: "fa078728eb8845ea94c8294a2a3c16c8",
+                    chunk_index: 6,
+                    content: "# 风险提示\n消费复苏不及预期；居民收入增长放缓；消费信心恢复缓慢；竞争加剧导致盈利能力下滑；原材料及物流成本上升。",
+                    char_count: 68,
+                    token_count: 62,
+                    active: true,
+                    updated_at: "2026-04-23T10:40:05.000000+00:00",
+                },
+            ],
+            "ad599cb069cd4674bdbc799b5739100f": [
+                {
+                    id: "chunk_m1a01",
+                    kb_id: "medical",
+                    doc_id: "ad599cb069cd4674bdbc799b5739100f",
+                    chunk_index: 0,
+                    content: "# 医药生物行业周报：分级诊疗体系迎重要部署，关注基层医疗资源配置优化、服务能力提升",
+                    char_count: 56,
+                    token_count: 48,
+                    active: true,
+                    updated_at: "2026-04-24T12:02:28.000000+00:00",
+                },
+                {
+                    id: "chunk_m1a02",
+                    kb_id: "medical",
+                    doc_id: "ad599cb069cd4674bdbc799b5739100f",
+                    chunk_index: 1,
+                    content: "# 政策动态\n近日，国务院办公厅发布关于完善分级诊疗体系的重要部署文件，强调优化基层医疗资源配置，提升基层医疗服务能力。政策明确提出要加强县域医共体建设，推进优质医疗资源下沉，完善双向转诊机制。",
+                    char_count: 142,
+                    token_count: 135,
+                    active: true,
+                    updated_at: "2026-04-24T12:02:28.000000+00:00",
+                },
+                {
+                    id: "chunk_m1a03",
+                    kb_id: "medical",
+                    doc_id: "ad599cb069cd4674bdbc799b5739100f",
+                    chunk_index: 2,
+                    content: "# 核心要点解读\n（1）基层医疗机构标准化建设提速，社区卫生服务中心和乡镇卫生院服务能力将显著提升；（2）县域医共体建设全面推进，资源整合效率提升；（3）远程医疗、互联网医疗等技术手段助力分级诊疗落地；（4）医保支付方式改革配套推进，引导患者基层首诊。",
+                    char_count: 165,
+                    token_count: 148,
+                    active: true,
+                    updated_at: "2026-04-24T12:02:28.000000+00:00",
+                },
+                {
+                    id: "chunk_m1a04",
+                    kb_id: "medical",
+                    doc_id: "ad599cb069cd4674bdbc799b5739100f",
+                    chunk_index: 3,
+                    content: "# 产业链影响分析\n分级诊疗体系完善将带动基层医疗设备需求增长，利好医疗器械企业。同时，基层药品目录扩容将促进普药及慢病用药市场增长。医药流通企业将受益于基层配送网络建设。互联网医疗平台将迎来新的发展机遇。",
+                    char_count: 142,
+                    token_count: 130,
+                    active: true,
+                    updated_at: "2026-04-24T12:02:28.000000+00:00",
+                },
+                {
+                    id: "chunk_m1a05",
+                    kb_id: "medical",
+                    doc_id: "ad599cb069cd4674bdbc799b5739100f",
+                    chunk_index: 4,
+                    content: "# 行业动态与创新药进展\n本周多条创新药研发管线取得积极进展。多款国产创新药获批上市或进入关键临床阶段。医保谈判目录调整预期升温，创新药准入环境持续优化。CXO企业订单结构持续优化，海外业务占比提升。",
+                    char_count: 132,
+                    token_count: 122,
+                    active: true,
+                    updated_at: "2026-04-24T12:02:28.000000+00:00",
+                },
+                {
+                    id: "chunk_m1a06",
+                    kb_id: "medical",
+                    doc_id: "ad599cb069cd4674bdbc799b5739100f",
+                    chunk_index: 5,
+                    content: "# 投资建议\n建议关注：（1）基层医疗设备：迈瑞医疗、鱼跃医疗等；（2）创新药龙头：恒瑞医药、百济神州、信达生物等；（3）CXO企业：药明康德、泰格医药等；（4）医药流通：九州通、上海医药等；（5）互联网医疗：京东健康、阿里健康等。",
+                    char_count: 145,
+                    token_count: 135,
+                    active: true,
+                    updated_at: "2026-04-24T12:02:28.000000+00:00",
+                },
+                {
+                    id: "chunk_m1a07",
+                    kb_id: "medical",
+                    doc_id: "ad599cb069cd4674bdbc799b5739100f",
+                    chunk_index: 6,
+                    content: "# 风险提示\n政策落地不及预期；医保控压力度加大；创新药研发失败风险；集采降价超预期；行业竞争加剧；国际贸易摩擦影响海外业务。",
+                    char_count: 78,
+                    token_count: 72,
+                    active: true,
+                    updated_at: "2026-04-24T12:02:28.000000+00:00",
+                },
+                {
+                    id: "chunk_m1a08",
+                    kb_id: "medical",
+                    doc_id: "ad599cb069cd4674bdbc799b5739100f",
+                    chunk_index: 7,
+                    content: "# 市场表现回顾\n本周医药生物板块整体表现分化。创新药及医疗器械子板块表现相对强势，中药板块表现平稳，医药商业板块略有承压。板块估值处于历史低位，配置价值凸显。北向资金净流入医药板块，机构持仓环比提升。",
+                    char_count: 135,
+                    token_count: 125,
+                    active: true,
+                    updated_at: "2026-04-24T12:02:28.000000+00:00",
+                },
+                {
+                    id: "chunk_m1a09",
+                    kb_id: "medical",
+                    doc_id: "ad599cb069cd4674bdbc799b5739100f",
+                    chunk_index: 8,
+                    content: "# 行业数据跟踪",
+                    char_count: 12,
+                    token_count: 10,
+                    active: true,
+                    updated_at: "2026-04-24T12:02:28.000000+00:00",
+                },
+            ],
+            "4f99e1189c524ccba8c58f32ab5f22ac": [
+                {
+                    id: "chunk_f1a01",
+                    kb_id: "finance",
+                    doc_id: "4f99e1189c524ccba8c58f32ab5f22ac",
+                    chunk_index: 0,
+                    content: "# 非银金融：资本市场聚焦（十六）-从东方收购上海，看地方金融国资优化布局冲刺一流投行梯队",
+                    char_count: 58,
+                    token_count: 45,
+                    active: true,
+                    updated_at: "2026-04-23T10:18:48.000000+00:00",
+                },
+                {
+                    id: "chunk_f1a02",
+                    kb_id: "finance",
+                    doc_id: "4f99e1189c524ccba8c58f32ab5f22ac",
+                    chunk_index: 1,
+                    content: "# 事件概述",
+                    char_count: 8,
+                    token_count: 8,
+                    active: true,
+                    updated_at: "2026-04-23T10:18:48.000000+00:00",
+                },
+                {
+                    id: "chunk_f1a03",
+                    kb_id: "finance",
+                    doc_id: "4f99e1189c524ccba8c58f32ab5f22ac",
+                    chunk_index: 2,
+                    content: "东方证券宣布收购上海地区某金融机构股权，此举标志着地方金融国资布局优化进入新阶段。交易完成后，东方证券在长三角地区的业务覆盖将进一步扩大，综合实力有望提升。本次收购是地方国资优化金融资源配置、打造一流投行梯队的重要举措。",
+                    char_count: 138,
+                    token_count: 125,
+                    active: true,
+                    updated_at: "2026-04-23T10:18:48.000000+00:00",
+                },
+                {
+                    id: "chunk_f1a04",
+                    kb_id: "finance",
+                    doc_id: "4f99e1189c524ccba8c58f32ab5f22ac",
+                    chunk_index: 3,
+                    content: "# 战略意义分析",
+                    char_count: 12,
+                    token_count: 10,
+                    active: true,
+                    updated_at: "2026-04-23T10:18:48.000000+00:00",
+                },
+                {
+                    id: "chunk_f1a05",
+                    kb_id: "finance",
+                    doc_id: "4f99e1189c524ccba8c58f32ab5f22ac",
+                    chunk_index: 4,
+                    content: "（1）区域布局优化：通过本次收购，东方证券进一步巩固在长三角区域的业务优势，受益于长三角一体化发展战略。（2）业务协同效应：双方在财富管理、投行、资管等业务领域具有较强互补性，整合后有望实现协同效应。（3）国资改革深化：体现地方金融国资整合趋势，有助于打造具有国际竞争力的一流投资银行。",
+                    char_count: 182,
+                    token_count: 165,
+                    active: true,
+                    updated_at: "2026-04-23T10:18:48.000000+00:00",
+                },
+                {
+                    id: "chunk_f1a06",
+                    kb_id: "finance",
+                    doc_id: "4f99e1189c524ccba8c58f32ab5f22ac",
+                    chunk_index: 5,
+                    content: "# 行业趋势展望",
+                    char_count: 12,
+                    token_count: 10,
+                    active: true,
+                    updated_at: "2026-04-23T10:18:48.000000+00:00",
+                },
+                {
+                    id: "chunk_f1a07",
+                    kb_id: "finance",
+                    doc_id: "4f99e1189c524ccba8c58f32ab5f22ac",
+                    chunk_index: 6,
+                    content: "证券行业集中度持续提升，头部券商竞争优势进一步巩固。在监管鼓励并购重组的政策背景下，行业整合加速推进。地方国资主导的券商整合将成为重要趋势，有助于打造航母级券商。资本市场改革持续推进，券商业务能力要求不断提升。",
+                    char_count: 135,
+                    token_count: 122,
+                    active: true,
+                    updated_at: "2026-04-23T10:18:48.000000+00:00",
+                },
+                {
+                    id: "chunk_f1a08",
+                    kb_id: "finance",
+                    doc_id: "4f99e1189c524ccba8c58f32ab5f22ac",
+                    chunk_index: 7,
+                    content: "# 投资建议",
+                    char_count: 8,
+                    token_count: 8,
+                    active: true,
+                    updated_at: "2026-04-23T10:18:48.000000+00:00",
+                },
+                {
+                    id: "chunk_f1a09",
+                    kb_id: "finance",
+                    doc_id: "4f99e1189c524ccba8c58f32ab5f22ac",
+                    chunk_index: 8,
+                    content: "建议关注：（1）头部券商：中信证券、华泰证券、国泰君安等；（2）整合受益标的：东方证券、浙商证券等；（3）财富管理龙头：东方财富、中金公司等。证券板块估值处于合理区间，配置价值凸显。",
+                    char_count: 125,
+                    token_count: 115,
+                    active: true,
+                    updated_at: "2026-04-23T10:18:48.000000+00:00",
+                },
+            ],
+        };
+
+        // Demo 模式：Api 对象仅保留 stub，实际功能由拦截器接管
+        const Api = {
+            async getDocs(kbId) {
+                return MOCK_DOCS[kbId] || [];
+            },
+            async getIntentTree() {
+                return [];
+            },
+            async toggleDocStatus(kbId, docId, isActive) {
+                return {};
+            },
+            async deleteDoc(kbId, docId) {
+                return {};
+            },
+            async uploadDoc(kbId, file, intentId) {
+                return { taskId: null };
+            },
+            async getTaskStatus(taskId) {
+                return { status: 'completed', progress: 100 };
+            },
+        };
+
+        const UIController = {
+            _dialog: {
+                backdrop: null,
+                title: null,
+                message: null,
+                input: null,
+                cancel: null,
+                confirm: null,
+                resolver: null,
+                keyHandler: null,
+            },
+            initDialog() {
+                const d = this._dialog;
+                d.backdrop = document.getElementById('app-dialog-backdrop');
+                d.title = document.getElementById('app-dialog-title');
+                d.message = document.getElementById('app-dialog-message');
+                d.input = document.getElementById('app-dialog-input');
+                d.cancel = document.getElementById('app-dialog-cancel');
+                d.confirm = document.getElementById('app-dialog-confirm');
+
+                d.cancel.addEventListener('click', () => this._closeDialog(false));
+                d.confirm.addEventListener('click', () => this._closeDialog(true));
+                d.backdrop.addEventListener('click', (e) => {
+                    if (e.target === d.backdrop) this._closeDialog(false);
+                });
+            },
+            _openDialog({ title, message, inputMode = false, defaultValue = '', placeholder = '', confirmText = '确定', cancelText = '取消', danger = false }) {
+                const d = this._dialog;
+                if (typeof d.resolver === 'function') this._closeDialog(false);
+
+                d.title.innerText = title || '';
+                d.message.innerText = message || '';
+                d.cancel.innerText = cancelText;
+                d.confirm.innerText = confirmText;
+                d.confirm.classList.toggle('danger', !!danger);
+
+                if (inputMode) {
+                    d.input.style.display = 'block';
+                    d.input.value = defaultValue || '';
+                    d.input.placeholder = placeholder || '';
+                } else {
+                    d.input.style.display = 'none';
+                    d.input.value = '';
+                    d.input.placeholder = '';
+                }
+
+                d.backdrop.style.display = 'flex';
+                d.backdrop.setAttribute('aria-hidden', 'false');
+
+                d.keyHandler = (ev) => {
+                    if (ev.key === 'Escape') {
+                        ev.preventDefault();
+                        this._closeDialog(false);
+                    } else if (ev.key === 'Enter') {
+                        if (!inputMode || document.activeElement === d.input) {
+                            ev.preventDefault();
+                            this._closeDialog(true);
+                        }
+                    }
+                };
+                document.addEventListener('keydown', d.keyHandler);
+
+                setTimeout(() => {
+                    if (inputMode) d.input.focus();
+                    else d.confirm.focus();
+                }, 0);
+
+                return new Promise((resolve) => {
+                    d.resolver = resolve;
+                });
+            },
+            _closeDialog(confirmed) {
+                const d = this._dialog;
+                if (!d.backdrop || typeof d.resolver !== 'function') return;
+                const value = d.input && d.input.style.display !== 'none' ? d.input.value : '';
+                const resolve = d.resolver;
+                d.resolver = null;
+                d.backdrop.style.display = 'none';
+                d.backdrop.setAttribute('aria-hidden', 'true');
+                if (d.keyHandler) {
+                    document.removeEventListener('keydown', d.keyHandler);
+                    d.keyHandler = null;
+                }
+                resolve({ confirmed: !!confirmed, value });
+            },
+            _escapeHtml(raw) {
+                return String(raw || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            },
+            _refreshSelectUI(select) {
+                if (!select) return;
+                const wrap = select.closest('.custom-select');
+                if (wrap && wrap.parentNode) {
+                    wrap.parentNode.insertBefore(select, wrap);
+                    wrap.remove();
+                }
+                select.dataset.csInited = '';
+                select.style.display = '';
+                if (window.RagShell && typeof window.RagShell.initCustomSelects === 'function') {
+                    window.RagShell.initCustomSelects();
+                }
+            },
+            async loadUploadIntentOptions() {
+                const select = document.getElementById('upload-intent-id');
+                if (!select) return;
+                select.disabled = true;
+                select.innerHTML = '<option value="" disabled selected>加载意图中...</option>';
+                this._refreshSelectUI(select);
+                try {
+                    const roots = await Api.getIntentTree();
+                    const options = ['<option value="" disabled selected>请选择意图归属</option>'];
+                    const walk = (node, path) => {
+                        if (!node) return;
+                        const id = String(node.id || '').trim();
+                        const label = String(node.label || '').trim();
+                        const depth = Number(node.depth || 0);
+                        const level = String(node.level || '').toUpperCase();
+                        const nextPath = label ? [...path, label] : [...path];
+                        const children = Array.isArray(node.children) ? node.children : [];
+                        const isLeaf = children.length === 0;
+                        const isIntentLeaf = depth >= 1 || level === 'INTENT';
+                        if (id && isLeaf && isIntentLeaf) {
+                            options.push(
+                                `<option value="${this._escapeHtml(id)}">${this._escapeHtml(nextPath.join(' / '))}</option>`
+                            );
+                            return;
+                        }
+                        children.forEach((child) => walk(child, nextPath));
+                    };
+                    roots.forEach((root) => walk(root, []));
+                    if (options.length === 1) {
+                        options.push('<option value="" disabled>暂无可选意图，请先配置二级意图</option>');
+                    }
+                    select.innerHTML = options.join('');
+                    select.disabled = false;
+                    this._refreshSelectUI(select);
+                } catch (e) {
+                    select.innerHTML = '<option value="">意图加载失败，请重试</option>';
+                    select.disabled = true;
+                    this._refreshSelectUI(select);
+                    this.showToast('加载意图列表失败', 'error');
+                }
+            },
+            async promptText({ title, message, defaultValue = '', placeholder = '', confirmText = '确定', cancelText = '取消' }) {
+                const result = await this._openDialog({
+                    title,
+                    message,
+                    inputMode: true,
+                    defaultValue,
+                    placeholder,
+                    confirmText,
+                    cancelText,
+                    danger: false,
+                });
+                if (!result.confirmed) return null;
+                const text = String(result.value || '').trim();
+                return text || null;
+            },
+            async confirmText({ title, message, confirmText = '确定', cancelText = '取消', danger = false }) {
+                const result = await this._openDialog({
+                    title,
+                    message,
+                    inputMode: false,
+                    confirmText,
+                    cancelText,
+                    danger,
+                });
+                return !!result.confirmed;
+            },
+            showToast(msg, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.innerText = msg;
+                container.appendChild(toast);
+                setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
+            },
+            getCrawlerSession() {
+                try {
+                    const raw = sessionStorage.getItem(CRAWLER_SESSION_KEY);
+                    if (!raw) return null;
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || typeof parsed !== 'object') return null;
+                    const taskId = String(parsed.task_id || '').trim();
+                    const kbId = String(parsed.kb_id || '').trim();
+                    const sourceType = String(parsed.source_type || '').trim();
+                    if (!taskId || !kbId || !sourceType) return null;
+                    return parsed;
+                } catch (_) {
+                    return null;
+                }
+            },
+            saveCrawlerSession(payload) {
+                try {
+                    sessionStorage.setItem(
+                        CRAWLER_SESSION_KEY,
+                        JSON.stringify({
+                            ...payload,
+                            updated_at: new Date().toISOString(),
+                        })
+                    );
+                } catch (_) {
+                    // ignore storage errors
+                }
+            },
+            patchCrawlerSession(patch) {
+                const current = this.getCrawlerSession();
+                if (!current) return;
+                this.saveCrawlerSession({
+                    ...current,
+                    ...patch,
+                });
+            },
+            clearCrawlerSession() {
+                try {
+                    sessionStorage.removeItem(CRAWLER_SESSION_KEY);
+                } catch (_) {
+                    // ignore storage errors
+                }
+            },
+            stopCrawlerPolling() {
+                if (crawlerPollTimer) {
+                    clearInterval(crawlerPollTimer);
+                    crawlerPollTimer = null;
+                }
+                crawlerPollTaskId = '';
+            },
+            _resolveCrawlerStageText(status, result, message) {
+                if (status === 'done') return '爬取完成';
+                if (status === 'failed') return '爬取失败';
+                const stage = String(result?.stage || '').trim().toLowerCase();
+                if (stage === 'describing') return '正在描述...';
+                if (stage === 'indexing') return '正在写入知识库...';
+                if (stage === 'parsing' || stage === 'page_filter_skipped') return '正在导入...';
+                if (message.includes('抓取报告列表')) return '正在抓取报告列表';
+                if (message.includes('[describing]')) return '正在描述...';
+                if (message.includes('[indexing]')) return '正在写入知识库...';
+                if (message.includes('导入') || message.includes('寻找合适')) return '正在导入...';
+                return '正在导入...';
+            },
+            _setCrawlerButtonState(state) {
+                const confirmBtn = document.getElementById('modal-confirm-btn');
+                if (!confirmBtn) return;
+                const normalized = String(state || 'idle').trim().toLowerCase();
+                if (normalized === 'running') {
+                    confirmBtn.disabled = true;
+                    confirmBtn.textContent = '爬取中...';
+                    confirmBtn.dataset.crawlerState = 'running';
+                    return;
+                }
+                if (normalized === 'done') {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = '完成';
+                    confirmBtn.dataset.crawlerState = 'done';
+                    return;
+                }
+                if (normalized === 'failed') {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = '重试';
+                    confirmBtn.dataset.crawlerState = 'failed';
+                    return;
+                }
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '开始爬取';
+                confirmBtn.dataset.crawlerState = 'idle';
+            },
+            startCrawlerPolling({ taskId, maxReports, appendStartLog = false } = {}) {
+                const resolvedTaskId = String(taskId || '').trim();
+                if (!resolvedTaskId) return;
+                const progressWrap = document.getElementById('crawler-progress');
+                const logEl = document.getElementById('crawler-log');
+                const fillEl = document.getElementById('crawler-fill');
+                const countEl = document.getElementById('crawler-count');
+                const statusEl = document.getElementById('crawler-status-text');
+                if (!progressWrap || !logEl || !fillEl || !countEl || !statusEl) return;
+
+                this.stopCrawlerPolling();
+                crawlerPollTaskId = resolvedTaskId;
+                progressWrap.style.display = 'block';
+                this._setCrawlerButtonState('running');
+                if (appendStartLog) {
+                    logEl.innerHTML = '';
+                    logEl.innerHTML += '<div>✓ 爬取任务已启动</div>';
+                }
+                const loggedFileKeys = new Set();
+                let lastStatusMessage = '';
+                const appendLog = (msg) => {
+                    logEl.innerHTML += `<div>${msg}</div>`;
+                    logEl.scrollTop = logEl.scrollHeight;
+                };
+
+                const pollOnce = async () => {
+                    try {
+                        const status = { status: 'done', progress: 100, result: { imported: 0, target_imports: 0 } };
+                        const progress = Number(status.progress || 0);
+                        const result = (status && typeof status.result === 'object' && status.result) ? status.result : {};
+                        const current = Number(status.current || result.current || 0);
+                        const imported = Number(result.imported || 0);
+                        const targetImports = Number(result.target_imports || maxReports || 0);
+                        const message = typeof status.message === 'string' ? status.message.trim() : '';
+
+                        fillEl.style.width = `${Math.max(0, Math.min(progress, 100))}%`;
+                        countEl.textContent = `${Math.min(imported, targetImports)} / ${targetImports}`;
+                        statusEl.textContent = this._resolveCrawlerStageText(status.status, result, message);
+                        this.patchCrawlerSession({
+                            crawler_state: String(status.status || 'running'),
+                            progress: progress,
+                            imported: imported,
+                            target_imports: targetImports,
+                            last_status_message: message,
+                        });
+
+                        if (message && message !== lastStatusMessage) {
+                            appendLog(`· ${message}`);
+                            lastStatusMessage = message;
+                        }
+                        if (status.last_file) {
+                            const fileKey = `${current}::${status.last_file}`;
+                            if (!loggedFileKeys.has(fileKey)) {
+                                appendLog(`✓ ${status.last_file}`);
+                                loggedFileKeys.add(fileKey);
+                            }
+                        }
+
+                        if (status.status === 'done') {
+                            this.stopCrawlerPolling();
+                            statusEl.textContent = '爬取完成';
+                            fillEl.style.width = '100%';
+                            appendLog('✓ 全部报告已导入报告库');
+                            this._setCrawlerButtonState('done');
+                            this.patchCrawlerSession({
+                                crawler_state: 'done',
+                                progress: 100,
+                                imported: Number(result.imported || imported || 0),
+                                target_imports: targetImports,
+                            });
+                            await DocumentManager.loadDocs();
+                            await KBManager.refresh();
+                            const importedCount = Number(result.imported || 0);
+                            this.showToast(`成功导入 ${importedCount} 份报告`, 'success');
+                        } else if (status.status === 'failed') {
+                            this.stopCrawlerPolling();
+                            statusEl.textContent = '爬取失败';
+                            appendLog(`✗ 错误：${status.error || '未知错误'}`);
+                            this._setCrawlerButtonState('failed');
+                            this.patchCrawlerSession({
+                                crawler_state: 'failed',
+                            });
+                            this.showToast('爬取失败', 'error');
+                        }
+                    } catch (e) {
+                        this.stopCrawlerPolling();
+                        const message = String(e?.message || '');
+                        if (message.includes('HTTP 404')) {
+                            statusEl.textContent = '任务已失效';
+                            this._setCrawlerButtonState('idle');
+                            appendLog('✗ 任务不存在或已失效');
+                            this.clearCrawlerSession();
+                            this.showToast('爬取任务已失效，请重新发起', 'error');
+                            return;
+                        }
+                        this._setCrawlerButtonState('failed');
+                        this.patchCrawlerSession({
+                            crawler_state: 'failed',
+                        });
+                        this.showToast(`进度查询失败: ${message || '未知错误'}`, 'error');
+                    }
+                };
+
+                pollOnce();
+                crawlerPollTimer = setInterval(() => {
+                    if (crawlerPollTaskId !== resolvedTaskId) return;
+                    pollOnce();
+                }, 1500);
+            },
+            async resumeCrawlerIfNeeded() {
+                const session = this.getCrawlerSession();
+                if (!session) return;
+                const kbId = String(session.kb_id || '').trim();
+                if (!kbId) return;
+                if (State.activeKbId !== kbId) {
+                    KBManager.selectKB(kbId);
+                }
+                this.openUploadModal({ sourceType: 'eastmoney' });
+                const maxReportsInput = document.getElementById('crawler-max-reports');
+                if (maxReportsInput && session.max_reports) {
+                    maxReportsInput.value = String(session.max_reports);
+                }
+                const progressWrap = document.getElementById('crawler-progress');
+                const statusEl = document.getElementById('crawler-status-text');
+                const fillEl = document.getElementById('crawler-fill');
+                const countEl = document.getElementById('crawler-count');
+                if (progressWrap) progressWrap.style.display = 'block';
+                if (fillEl && session.progress !== undefined) {
+                    fillEl.style.width = `${Math.max(0, Math.min(Number(session.progress || 0), 100))}%`;
+                }
+                if (countEl) {
+                    const imported = Number(session.imported || 0);
+                    const targetImports = Number(session.target_imports || session.max_reports || 0);
+                    countEl.textContent = `${Math.min(imported, targetImports)} / ${targetImports}`;
+                }
+                const state = String(session.crawler_state || 'idle').trim().toLowerCase();
+                if (state === 'running') {
+                    if (statusEl) statusEl.textContent = '正在恢复爬取进度...';
+                    this.startCrawlerPolling({
+                        taskId: String(session.task_id || ''),
+                        maxReports: Number(session.max_reports || 20),
+                    });
+                    return;
+                }
+                if (statusEl) {
+                    statusEl.textContent = state === 'done' ? '爬取完成' : '爬取失败';
+                }
+                this._setCrawlerButtonState(state === 'done' ? 'done' : 'failed');
+            },
+            toggleUploadArea() {
+                this.openUploadModal();
+            },
+            openUploadModal(options = {}) {
+                const modal = document.getElementById('upload-modal');
+                const sourceType = document.getElementById('source-type');
+                const processMode = document.getElementById('process-mode');
+                const industry = INDUSTRIES.find(i => i.id === State.activeKbId);
+                const industryLabelEl = document.getElementById('upload-industry-label');
+                const targetSourceType = String(options.sourceType || 'local').trim() || 'local';
+                if (modal) modal.style.display = 'flex';
+                if (sourceType) {
+                    sourceType.value = targetSourceType;
+                    this._refreshSelectUI(sourceType);
+                }
+                if (processMode) processMode.value = 'chunk';
+                if (industryLabelEl) industryLabelEl.textContent = industry ? industry.label : '-';
+                this.onSourceTypeChange();
+                this.onProcessModeChange();
+                this.loadUploadIntentOptions();
+            },
+            closeUploadModal() {
+                const modal = document.getElementById('upload-modal');
+                if (modal) modal.style.display = 'none';
+                this.stopCrawlerPolling();
+                this.clearCrawlerSession();
+                const sourceType = document.getElementById('source-type');
+                const processMode = document.getElementById('process-mode');
+                const intentSelect = document.getElementById('upload-intent-id');
+                const fileInput = document.getElementById('file-input');
+                const crawlerProgress = document.getElementById('crawler-progress');
+                const crawlerLog = document.getElementById('crawler-log');
+                const confirmBtn = document.getElementById('modal-confirm-btn');
+                if (sourceType) {
+                    sourceType.value = 'local';
+                    this._refreshSelectUI(sourceType);
+                }
+                if (processMode) processMode.value = 'chunk';
+                if (intentSelect) intentSelect.value = '';
+                if (fileInput) fileInput.value = '';
+                if (crawlerProgress) crawlerProgress.style.display = 'none';
+                if (crawlerLog) crawlerLog.innerHTML = '';
+                if (confirmBtn) {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = '导入';
+                    confirmBtn.dataset.crawlerState = 'idle';
+                }
+                if (typeof UploadHandler !== 'undefined' && UploadHandler && typeof UploadHandler.clearPendingFiles === 'function') {
+                    UploadHandler.clearPendingFiles();
+                }
+                this.onSourceTypeChange();
+            },
+            async onSourceTypeChange(options = {}) {
+                const type = document.getElementById('source-type')?.value || 'local';
+                const isCrawler = type === 'crawler' || type === 'eastmoney';
+                const localSection = document.getElementById('local-section');
+                const crawlerSection = document.getElementById('crawler-section');
+                const processModeGroup = document.getElementById('process-mode-group');
+                const chunkConfig = document.getElementById('chunk-config');
+                const confirmBtn = document.getElementById('modal-confirm-btn');
+                const skipSessionConfirm = !!options.skipSessionConfirm;
+                if (!isCrawler && !skipSessionConfirm && this.getCrawlerSession()) {
+                    const confirmed = await this.confirmText({
+                        title: '停止恢复爬取任务？',
+                        message: '切换到本地文件将不再恢复当前爬取进度。',
+                        confirmText: '继续切换',
+                        cancelText: '返回爬取',
+                        danger: false,
+                    });
+                    if (!confirmed) {
+                        const sourceType = document.getElementById('source-type');
+                        if (sourceType) {
+                            sourceType.value = 'eastmoney';
+                            this._refreshSelectUI(sourceType);
+                        }
+                        this.onSourceTypeChange({ skipSessionConfirm: true });
+                        return;
+                    }
+                    this.stopCrawlerPolling();
+                    this.clearCrawlerSession();
+                }
+                if (localSection) localSection.style.display = isCrawler ? 'none' : 'block';
+                if (crawlerSection) crawlerSection.style.display = isCrawler ? 'block' : 'none';
+                if (processModeGroup) processModeGroup.style.display = 'none';
+                if (chunkConfig) chunkConfig.style.display = isCrawler ? 'none' : 'block';
+                if (confirmBtn) {
+                    if (isCrawler) {
+                        const state = String(confirmBtn.dataset.crawlerState || 'idle').trim().toLowerCase();
+                        if (state === 'running') {
+                            confirmBtn.disabled = true;
+                            confirmBtn.textContent = '爬取中...';
+                        } else if (state === 'done') {
+                            confirmBtn.disabled = false;
+                            confirmBtn.textContent = '完成';
+                        } else if (state === 'failed') {
+                            confirmBtn.disabled = false;
+                            confirmBtn.textContent = '重试';
+                        } else {
+                            confirmBtn.textContent = '开始爬取';
+                            confirmBtn.dataset.crawlerState = 'idle';
+                        }
+                    } else {
+                        confirmBtn.textContent = '导入';
+                        confirmBtn.dataset.crawlerState = 'idle';
+                    }
+                }
+            },
+            onProcessModeChange() {
+                const sourceType = document.getElementById('source-type')?.value || 'local';
+                const isCrawler = sourceType === 'crawler' || sourceType === 'eastmoney';
+                const hint = document.getElementById('mode-hint');
+                const chunkConfig = document.getElementById('chunk-config');
+                if (!hint || !chunkConfig) return;
+                if (isCrawler) {
+                    chunkConfig.style.display = 'none';
+                    return;
+                }
+                hint.textContent = '分块策略：直接切分入库';
+                chunkConfig.style.display = 'block';
+            },
+            toggleNoSplit() {
+                const btn = document.getElementById('btn-no-split');
+                const sizeInput = document.getElementById('chunk-size');
+                const overlapInput = document.getElementById('chunk-overlap');
+                if (!btn || !sizeInput || !overlapInput) return;
+                const isActive = btn.classList.toggle('active');
+                sizeInput.disabled = isActive;
+                overlapInput.disabled = isActive;
+                if (isActive) {
+                    sizeInput.value = '999999';
+                    overlapInput.value = '0';
+                } else {
+                    sizeInput.value = '512';
+                    overlapInput.value = '128';
+                }
+            },
+            async handleModalConfirm() {
+                const type = document.getElementById('source-type')?.value || 'local';
+                const isCrawler = type === 'crawler' || type === 'eastmoney';
+                if (!isCrawler) {
+                    const intentId = document.getElementById('upload-intent-id')?.value || '';
+                    if (!intentId.trim()) {
+                        this.showToast('请先选择意图归属', 'error');
+                        return;
+                    }
+                    if (!UploadHandler.hasPendingFiles()) {
+                        this.showToast('请先添加要导入的本地文件', 'error');
+                        return;
+                    }
+                    await UploadHandler.startPendingUploads(intentId);
+                } else {
+                    const confirmBtn = document.getElementById('modal-confirm-btn');
+                    const crawlerState = confirmBtn?.dataset?.crawlerState || 'idle';
+                    if (crawlerState === 'done') {
+                        this.closeUploadModal();
+                        return;
+                    }
+                    if (crawlerState === 'running') return;
+                    await this.startCrawler();
+                }
+            },
+            async startCrawler() {
+                if (!State.activeKbId) { this.showToast('请先选择行业报告库', 'error'); return; }
+                const industry = State.activeKbId || '';
+                const maxReports = parseInt(document.getElementById('crawler-max-reports')?.value || '20', 10) || 20;
+                const confirmBtn = document.getElementById('modal-confirm-btn');
+                const progressWrap = document.getElementById('crawler-progress');
+                const logEl = document.getElementById('crawler-log');
+                const fillEl = document.getElementById('crawler-fill');
+                const countEl = document.getElementById('crawler-count');
+                const statusEl = document.getElementById('crawler-status-text');
+                if (!confirmBtn || !progressWrap || !logEl || !fillEl || !countEl || !statusEl) return;
+
+                this._setCrawlerButtonState('running');
+                progressWrap.style.display = 'block';
+                logEl.innerHTML = '';
+
+                try {
+                    const response = { task_id: 'mock_task_' + Date.now() };
+
+                    const taskId = response.task_id;
+                    const industryInfo = INDUSTRIES.find(i => i.id === State.activeKbId);
+                    this.saveCrawlerSession({
+                        task_id: taskId,
+                        kb_id: String(State.activeKbId || ''),
+                        kb_label: industryInfo ? industryInfo.label : String(State.activeKbId || ''),
+                        source_type: 'eastmoney',
+                        max_reports: maxReports,
+                        crawler_state: 'running',
+                        progress: 0,
+                        imported: 0,
+                        target_imports: maxReports,
+                    });
+                    this.startCrawlerPolling({
+                        taskId: taskId,
+                        maxReports: maxReports,
+                        appendStartLog: true,
+                    });
+                } catch (e) {
+                    this.showToast(`启动爬取失败: ${e.message}`, 'error');
+                    this._setCrawlerButtonState('idle');
+                }
+            },
+            formatNumber(num) {
+                return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+        };
+
+        const KBManager = {
+            async init() {
+                this.renderList();
+            },
+            async refresh() {
+                this.renderList();
+            },
+            renderList() {
+                const listEl = document.getElementById('kb-list');
+                listEl.innerHTML = '';
+                INDUSTRIES.forEach(industry => {
+                    const card = document.createElement('div');
+                    card.className = `kb-card ${State.activeKbId === industry.id ? 'active' : ''}`;
+                    card.onclick = () => this.selectKB(industry.id);
+                    card.innerHTML = `
+                        <div class="kb-card-header">
+                            <div class="kb-name">${industry.label}</div>
+                            <span id="kb-count-${industry.id}" style="font-size:10px; color:var(--text-muted);">-</span>
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                });
+                this.refreshCounts();
+            },
+            async refreshCounts() {
+                for (const industry of INDUSTRIES) {
+                    try {
+                        const docs = MOCK_DOCS[industry.id] || [];
+                        const el = document.getElementById(`kb-count-${industry.id}`);
+                        if (el) el.textContent = `${docs.length} 篇`;
+                    } catch (_) {
+                        const el = document.getElementById(`kb-count-${industry.id}`);
+                        if (el) el.textContent = '-';
+                    }
+                }
+            },
+            selectKB(id) {
+                State.activeKbId = id;
+                this.renderList();
+                DocumentManager.initForKB(id);
+            },
+        };
+
+        const DocumentManager = {
+            formatDocTime(raw) {
+                if (!raw) return '-';
+                const d = new Date(raw);
+                if (Number.isNaN(d.getTime())) return String(raw);
+                return d.toLocaleString('zh-CN', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                }).replace(/\//g, '-');
+            },
+            initForKB(kbId) {
+                document.getElementById('unselected-state').style.display = 'none';
+                document.getElementById('doc-container').style.display = 'flex';
+                document.getElementById('upload-area').style.display = 'none';
+                const industry = INDUSTRIES.find(i => i.id === kbId);
+                document.getElementById('current-kb-name').innerText = industry ? industry.label : kbId;
+                document.getElementById('doc-search').value = '';
+                document.getElementById('doc-filter').value = 'all';
+                State.searchQuery = '';
+                State.filterStatus = 'all';
+                this.loadDocs();
+            },
+            async loadDocs() {
+                try { State.docs = await Api.getDocs(State.activeKbId); this.renderTable(); }
+                catch (e) { UIController.showToast("加载文档列表失败", "error"); }
+            },
+            renderTable() {
+                const tbody = document.getElementById('doc-tbody');
+                const emptyState = document.getElementById('table-empty');
+                tbody.innerHTML = '';
+                const query = State.searchQuery.toLowerCase();
+                let filtered = State.docs.filter(d => {
+                    const fallbackFromSource = String(d.source || '').split('/').pop().split('\\').pop();
+                    const displayName = String(d.display_name || d.name || fallbackFromSource || '');
+                    return displayName.toLowerCase().includes(query);
+                });
+                if (State.filterStatus !== 'all') filtered = filtered.filter(d => d.status === State.filterStatus);
+                if (filtered.length === 0) {
+                    emptyState.style.display = 'flex';
+                    document.getElementById('doc-table').style.display = 'none';
+                    return;
+                }
+                emptyState.style.display = 'none';
+                document.getElementById('doc-table').style.display = 'table';
+                filtered.forEach(doc => {
+                    const fallbackFromSource = String(doc.source || '').split('/').pop().split('\\').pop();
+                    const displayName = String(doc.display_name || doc.name || fallbackFromSource || '-');
+                    const displayTime = this.formatDocTime(doc.time || doc.created_at || doc.createdAt);
+                    const tr = document.createElement('tr');
+                    let statusHtml = '';
+                    if (doc.status === 'processing') {
+                        statusHtml = `<span class="badge badge-processing">索引同步中</span>`;
+                    } else if (doc.status === 'ready') {
+                        statusHtml = `<span class="badge badge-active">已索引</span>`;
+                    } else if (doc.status === 'sync_failed') {
+                        statusHtml = `<span class="badge badge-failed" title="同步失败">同步失败 · <a href="javascript:DocumentManager.retrySync('${doc.id}')" style="color:inherit; text-decoration:underline; cursor:pointer;">重试</a></span>`;
+                    } else if (doc.status === 'failed') {
+                        statusHtml = `<span class="badge badge-failed" title="解析失败">解析失败</span>`;
+                    } else {
+                        statusHtml = `<span class="badge">${doc.status}</span>`;
+                    }
+                    
+                    const nameCell = document.createElement('td');
+                    nameCell.className = 'fw-500';
+                    nameCell.style.cursor = 'pointer';
+                    nameCell.style.color = 'var(--accent)';
+                    nameCell.textContent = displayName;
+                    nameCell.onclick = () => ChunkManager.openForDoc(doc.id, displayName);
+                    
+                    tr.innerHTML = `
+                        <td class="font-mono text-muted">${doc.size}</td>
+                        <td>${statusHtml}</td>
+                        <td class="font-mono">${UIController.formatNumber(doc.chunks)}</td>
+                        <td class="font-mono text-muted">${displayTime}</td>
+                        <td class="cell-actions">
+                            <span class="action-link" onclick="DocumentManager.toggleStatus('${doc.id}', ${!doc.active})">${doc.active ? '停用' : '启用'}</span>
+                            <span class="action-link danger" onclick="DocumentManager.deleteDoc('${doc.id}')">删除</span>
+                        </td>
+                    `;
+                    tr.insertBefore(nameCell, tr.firstChild);
+                    tbody.appendChild(tr);
+                });
+                
+                // 启动轮询
+                this.startPolling();
+            },
+            
+            pollingInterval: null,
+            
+            startPolling() {
+                if (this.pollingInterval) clearInterval(this.pollingInterval);
+                this.pollingInterval = setInterval(() => {
+                    this.checkSyncStatus();
+                }, 3000);
+            },
+            
+            stopPolling() {
+                if (this.pollingInterval) {
+                    clearInterval(this.pollingInterval);
+                    this.pollingInterval = null;
+                }
+            },
+            
+            async checkSyncStatus() {
+                const processingDocs = State.docs.filter(d => d.status === 'processing');
+                if (processingDocs.length === 0) return;
+                
+                for (const doc of processingDocs) {
+                    try {
+                        const status = { sync_status: 'done' };
+                        if (status.sync_status !== 'processing') {
+                            await this.loadDocs();
+                            break;
+                        }
+                    } catch (e) {
+                        console.error('检查同步状态失败:', e);
+                    }
+                }
+            },
+            
+            async retrySync(docId) {
+                try {
+                    UIController.showToast('同步任务已触发', 'success');
+                    await this.loadDocs();
+                } catch (e) {
+                    UIController.showToast('触发同步失败', 'error');
+                }
+            },
+            async toggleStatus(docId, isActive) {
+                try {
+                    await Api.toggleDocStatus(State.activeKbId, docId, isActive);
+                    await this.loadDocs();
+                } catch(e) { UIController.showToast("操作失败", "error"); }
+            },
+            async deleteDoc(docId) {
+                const ok = await UIController.confirmText({
+                    title: '删除文档',
+                    message: '确认删除该报告及对应的报告库片段数据吗？',
+                    confirmText: '删除',
+                    cancelText: '取消',
+                    danger: true,
+                });
+                if (!ok) return;
+                try {
+                    await Api.deleteDoc(State.activeKbId, docId);
+                    await this.loadDocs();
+                    await KBManager.refresh();
+                    UIController.showToast("文档已删除", "success");
+                } catch (e) { UIController.showToast("删除失败", "error"); }
+            }
+        };
+
+        const UploadHandler = {
+            pendingFiles: [],
+            _fileKey(file) {
+                const name = String(file?.name || '');
+                const size = Number(file?.size || 0);
+                const modified = Number(file?.lastModified || 0);
+                return `${name}::${size}::${modified}`;
+            },
+            hasPendingFiles() {
+                return this.pendingFiles.length > 0;
+            },
+            clearPendingFiles() {
+                this.pendingFiles = [];
+                this.renderPendingFiles();
+            },
+            renderPendingFiles() {
+                const listEl = document.getElementById('upload-list');
+                if (!listEl) return;
+                if (!this.pendingFiles.length) {
+                    listEl.innerHTML = '';
+                    return;
+                }
+                listEl.innerHTML = this.pendingFiles.map((file) => {
+                    const safeName = UIController._escapeHtml(file.name);
+                    return `
+                        <div class="upload-item">
+                            <div class="fw-500" style="width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeName}</div>
+                            <div class="text-muted font-mono">待导入</div>
+                        </div>
+                    `;
+                }).join('');
+            },
+            addPendingFiles(files) {
+                const incoming = Array.from(files || []);
+                if (!incoming.length) return 0;
+                const existing = new Set(this.pendingFiles.map((file) => this._fileKey(file)));
+                let added = 0;
+                incoming.forEach((file) => {
+                    const key = this._fileKey(file);
+                    if (existing.has(key)) return;
+                    this.pendingFiles.push(file);
+                    existing.add(key);
+                    added += 1;
+                });
+                this.renderPendingFiles();
+                return added;
+            },
+            async startPendingUploads(intentId) {
+                if (!this.pendingFiles.length) return;
+                const filesToUpload = [...this.pendingFiles];
+                this.pendingFiles = [];
+                this.renderPendingFiles();
+                for (let i = 0; i < filesToUpload.length; i++) {
+                    await this.createUploadTask(filesToUpload[i], intentId);
+                }
+            },
+            init() {
+                const dropZone = document.getElementById('drop-zone');
+                const fileInput = document.getElementById('file-input');
+                dropZone.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', (e) => this.handleFiles(e.target.files));
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }));
+                ['dragenter', 'dragover'].forEach(ev => dropZone.addEventListener(ev, () => dropZone.classList.add('dragover')));
+                ['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, () => dropZone.classList.remove('dragover')));
+                dropZone.addEventListener('drop', (e) => this.handleFiles(e.dataTransfer.files));
+            },
+            async handleFiles(files) {
+                if (!files.length || !State.activeKbId) return;
+                const added = this.addPendingFiles(files);
+                if (added > 0) {
+                    UIController.showToast(`已加入待导入：${added} 个文件`, 'info');
+                }
+                document.getElementById('file-input').value = '';
+            },
+            async createUploadTask(file, intentId) {
+                const listEl = document.getElementById('upload-list');
+                try {
+                    const res = await Api.uploadDoc(State.activeKbId, file, intentId);
+                    const taskIdStr = 'task_ui_' + Date.now() + '_' + Math.random().toString(16).slice(2);
+                    const item = document.createElement('div');
+                    item.className = 'upload-item';
+                    item.id = taskIdStr;
+                    item.innerHTML = `
+                        <div class="fw-500" style="width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${file.name}</div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" id="fill_${taskIdStr}"></div></div>
+                        <div class="text-muted font-mono" id="status_${taskIdStr}" style="width:70px; text-align:right;">解析中...</div>
+                    `;
+                    listEl.appendChild(item);
+                    UploadTaskMap.set(taskIdStr, res.taskId);
+                    const pollInterval = setInterval(async () => {
+                        const taskStatus = await Api.getTaskStatus(res.taskId);
+                        const fillEl = document.getElementById(`fill_${taskIdStr}`);
+                        const statusTextEl = document.getElementById(`status_${taskIdStr}`);
+                        const status = String(taskStatus.status || '');
+                        const progress = Number(taskStatus.progress || 0);
+                        if (fillEl) fillEl.style.width = `${progress}%`;
+                        if (status === 'done') {
+                            clearInterval(pollInterval);
+                            if (statusTextEl) statusTextEl.innerText = '完成';
+                            await DocumentManager.loadDocs();
+                            await KBManager.refresh();
+                            UIController.showToast(`${file.name} 处理完成`, "success");
+                            const allDone = Array.from(document.querySelectorAll('#upload-list .upload-item'))
+                                .every(itemEl => {
+                                    const sEl = itemEl.querySelector('[id^="status_"]');
+                                    return sEl && (sEl.innerText === '完成' || sEl.innerText === '失败');
+                                });
+                            if (allDone) {
+                                setTimeout(() => {
+                                    document.getElementById('upload-list').innerHTML = '';
+                                }, 1500);
+                            }
+                        } else if (status === 'failed') {
+                            clearInterval(pollInterval);
+                            if (statusTextEl) statusTextEl.innerText = '失败';
+                            UIController.showToast(`${file.name} 处理失败`, "error");
+                            const allDone = Array.from(document.querySelectorAll('#upload-list .upload-item'))
+                                .every(itemEl => {
+                                    const sEl = itemEl.querySelector('[id^="status_"]');
+                                    return sEl && (sEl.innerText === '完成' || sEl.innerText === '失败');
+                                });
+                            if (allDone) {
+                                setTimeout(() => {
+                                    document.getElementById('upload-list').innerHTML = '';
+                                }, 1500);
+                            }
+                        }
+                    }, 800);
+                } catch (e) {
+                    const message = String(e && e.message ? e.message : "");
+                    if (message.includes("HTTP 409")) {
+                        UIController.showToast(`${file.name} 已存在，无需重复上传`, "error");
+                    } else {
+                        UIController.showToast(`${file.name} 上传失败：${message || "未知错误"}`, "error");
+                    }
+                }
+            }
+        };
+
+        // Search & filter bindings
+        document.getElementById('doc-search').addEventListener('input', e => { State.searchQuery = e.target.value; DocumentManager.renderTable(); });
+        document.getElementById('doc-filter').addEventListener('change', e => { State.filterStatus = e.target.value; DocumentManager.renderTable(); });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            UIController.initDialog();
+            KBManager.init();
+            UploadHandler.init();
+            UIController.onSourceTypeChange({ skipSessionConfirm: true });
+            UIController.onProcessModeChange();
+            UIController.resumeCrawlerIfNeeded();
+            const modal = document.getElementById('upload-modal');
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) UIController.closeUploadModal();
+                });
+            }
+            const chunkModal = document.getElementById('chunk-modal');
+            if (chunkModal) {
+                chunkModal.addEventListener('click', (e) => {
+                    if (e.target === chunkModal) ChunkManager.closeModal();
+                });
+            }
+        });
+
+        const ChunkManager = {
+            selectedIds: new Set(),
+            editingChunkId: null,
+
+            _escapeHtml(raw) {
+                return String(raw || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            },
+
+            async openForDoc(docId, docName) {
+                State.activeDocId = docId;
+                State.activeDocName = docName || '';
+                State.chunkOffset = 0;
+                State.chunkFilter = 'all';
+                State.chunks = [];
+                this.selectedIds.clear();
+
+                const unselected = document.getElementById('unselected-state');
+                const docContainer = document.getElementById('doc-container');
+                const chunkContainer = document.getElementById('chunk-container');
+                if (unselected) unselected.style.display = 'none';
+                if (docContainer) docContainer.style.display = 'none';
+                if (chunkContainer) chunkContainer.style.display = 'flex';
+
+                const industry = INDUSTRIES.find(i => i.id === State.activeKbId);
+                const kbName = industry ? industry.label : '行业库';
+                const kbLabel = document.getElementById('chunk-kb-name');
+                const docLabel = document.getElementById('chunk-doc-name');
+                const filterSelect = document.getElementById('chunk-filter-select');
+                const selectAll = document.getElementById('chunk-select-all');
+                if (kbLabel) kbLabel.innerText = kbName;
+                if (docLabel) {
+                    const shownName = docName || '-';
+                    docLabel.innerText = shownName;
+                    docLabel.title = shownName;
+                }
+                if (filterSelect) filterSelect.value = 'all';
+                if (selectAll) selectAll.checked = false;
+
+                await this.loadChunks();
+            },
+
+            backToDoc() {
+                State.activeDocId = null;
+                State.activeDocName = '';
+                this.selectedIds.clear();
+                const chunkContainer = document.getElementById('chunk-container');
+                const docContainer = document.getElementById('doc-container');
+                const unselected = document.getElementById('unselected-state');
+                const docLabel = document.getElementById('chunk-doc-name');
+                if (chunkContainer) chunkContainer.style.display = 'none';
+                if (docLabel) docLabel.title = '';
+                if (State.activeKbId) {
+                    if (docContainer) docContainer.style.display = 'flex';
+                    if (unselected) unselected.style.display = 'none';
+                } else {
+                    if (docContainer) docContainer.style.display = 'none';
+                    if (unselected) unselected.style.display = 'flex';
+                }
+            },
+
+            async loadChunks() {
+                if (!State.activeKbId || !State.activeDocId) return;
+                try {
+                    const allChunks = MOCK_CHUNKS[State.activeDocId] || [];
+                    const filtered = State.chunkFilter === 'all' 
+                        ? allChunks 
+                        : allChunks.filter(c => c.active === (State.chunkFilter === 'active'));
+                    const offset = State.chunkOffset;
+                    const limit = State.chunkLimit;
+                    State.chunks = filtered.slice(offset, offset + limit);
+                    State.chunkTotal = filtered.length;
+                    this.renderTable();
+                } catch (e) {
+                    UIController.showToast('加载片段失败', 'error');
+                }
+            },
+
+            onFilterChange() {
+                const val = document.getElementById('chunk-filter-select')?.value || 'all';
+                State.chunkFilter = val;
+                State.chunkOffset = 0;
+                this.selectedIds.clear();
+                this.loadChunks();
+            },
+
+            prevPage() {
+                if (State.chunkOffset <= 0) return;
+                State.chunkOffset = Math.max(0, State.chunkOffset - State.chunkLimit);
+                this.selectedIds.clear();
+                this.loadChunks();
+            },
+
+            nextPage() {
+                if (State.chunkOffset + State.chunkLimit >= State.chunkTotal) return;
+                State.chunkOffset += State.chunkLimit;
+                this.selectedIds.clear();
+                this.loadChunks();
+            },
+
+            renderTable() {
+                const tbody = document.getElementById('chunk-tbody');
+                const empty = document.getElementById('chunk-empty');
+                const table = document.getElementById('chunk-table');
+                if (!tbody || !empty || !table) return;
+
+                if (State.chunks.length === 0) {
+                    empty.style.display = 'flex';
+                    table.style.display = 'none';
+                    this._renderPager();
+                    this.updateBatchBar();
+                    return;
+                }
+                empty.style.display = 'none';
+                table.style.display = 'table';
+
+                tbody.innerHTML = State.chunks.map((c) => {
+                    const active = !!c.active;
+                    const badgeHtml = active
+                        ? '<span class="badge badge-active">启用</span>'
+                        : '<span class="badge badge-inactive">停用</span>';
+                    const previewRaw = String(c.content || '').replace(/\n/g, ' ');
+                    const preview = this._escapeHtml(previewRaw.slice(0, 80));
+                    const fullText = this._escapeHtml(String(c.content || ''));
+                    const timeRaw = c.updated_at || c.updatedAt || c.created_at || c.createdAt;
+                    const d = timeRaw ? new Date(timeRaw) : null;
+                    const time = (d && !Number.isNaN(d.getTime()))
+                        ? d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/\//g, '-')
+                        : '-';
+                    const checked = this.selectedIds.has(c.id) ? 'checked' : '';
+                    return `
+                        <tr>
+                            <td><input type="checkbox" ${checked} onchange="ChunkManager.toggleSelect('${this._escapeHtml(c.id)}', this.checked)"></td>
+                            <td class="font-mono text-muted">${c.chunk_index ?? '-'}</td>
+                            <td style="cursor:pointer; color:var(--accent);" onclick="ChunkManager.openEditModal('${this._escapeHtml(c.id)}')" title="${fullText}">${preview}${previewRaw.length > 80 ? '…' : ''}</td>
+                            <td>${badgeHtml}</td>
+                            <td class="font-mono">${c.char_count ?? '-'}</td>
+                            <td class="font-mono">${c.token_count ?? '-'}</td>
+                            <td class="font-mono text-muted" style="font-size:11px;">${time}</td>
+                            <td class="cell-actions">
+                                <span class="action-link" onclick="ChunkManager.toggleStatus('${this._escapeHtml(c.id)}', ${!active})">${active ? '停用' : '启用'}</span>
+                                <span class="action-link danger" onclick="ChunkManager.deleteChunk('${this._escapeHtml(c.id)}')">删除</span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                this._renderPager();
+                this.updateBatchBar();
+            },
+
+            _renderPager() {
+                const totalText = document.getElementById('chunk-total-text');
+                const pageText = document.getElementById('chunk-page-text');
+                const prevBtn = document.getElementById('chunk-prev-btn');
+                const nextBtn = document.getElementById('chunk-next-btn');
+                const selectAll = document.getElementById('chunk-select-all');
+                const total = State.chunkTotal || 0;
+                const page = Math.floor(State.chunkOffset / State.chunkLimit) + 1;
+                const totalPages = Math.max(1, Math.ceil(total / State.chunkLimit));
+                if (totalText) totalText.innerText = `共 ${total} 条片段`;
+                if (pageText) pageText.innerText = `${page} / ${totalPages}`;
+                if (prevBtn) prevBtn.disabled = State.chunkOffset <= 0;
+                if (nextBtn) nextBtn.disabled = State.chunkOffset + State.chunkLimit >= total;
+                if (selectAll) {
+                    const allChecked = State.chunks.length > 0 && State.chunks.every(c => this.selectedIds.has(c.id));
+                    selectAll.checked = allChecked;
+                }
+            },
+
+            toggleSelect(id, checked) {
+                if (checked) this.selectedIds.add(id);
+                else this.selectedIds.delete(id);
+                this.updateBatchBar();
+                this._renderPager();
+            },
+
+            toggleSelectAll(checked) {
+                State.chunks.forEach((c) => {
+                    if (checked) this.selectedIds.add(c.id);
+                    else this.selectedIds.delete(c.id);
+                });
+                this.updateBatchBar();
+                this.renderTable();
+            },
+
+            clearSelection() {
+                this.selectedIds.clear();
+                const all = document.getElementById('chunk-select-all');
+                if (all) all.checked = false;
+                this.updateBatchBar();
+                this.renderTable();
+            },
+
+            updateBatchBar() {
+                const bar = document.getElementById('chunk-batch-bar');
+                const countEl = document.getElementById('chunk-selected-count');
+                const count = this.selectedIds.size;
+                if (bar) bar.style.display = count > 0 ? 'flex' : 'none';
+                if (countEl) countEl.innerText = `已选 ${count} 项`;
+            },
+
+            async toggleStatus(chunkId, active) {
+                try {
+                    await this.loadChunks();
+                } catch (e) {
+                    UIController.showToast('操作失败', 'error');
+                }
+            },
+
+            async deleteChunk(chunkId) {
+                if (!confirm('确认删除该片段？将同时从索引库中移除。')) return;
+                try {
+                    await this.loadChunks();
+                    await DocumentManager.loadDocs();
+                    await KBManager.refresh();
+                    UIController.showToast('片段已删除', 'success');
+                } catch (e) {
+                    UIController.showToast('删除失败', 'error');
+                }
+            },
+
+            async batchUpdate(active) {
+                const ids = Array.from(this.selectedIds);
+                if (ids.length === 0) return;
+                try {
+                    this.selectedIds.clear();
+                    await this.loadChunks();
+                    UIController.showToast(`已${active ? '启用' : '停用'} ${ids.length} 条片段`, 'success');
+                } catch (e) {
+                    UIController.showToast('批量操作失败', 'error');
+                }
+            },
+
+            async batchDelete() {
+                const ids = Array.from(this.selectedIds);
+                if (ids.length === 0) return;
+                if (!confirm(`确认删除选中的 ${ids.length} 条片段？`)) return;
+                try {
+                    this.selectedIds.clear();
+                    await this.loadChunks();
+                    await DocumentManager.loadDocs();
+                    await KBManager.refresh();
+                    UIController.showToast(`已删除 ${ids.length} 条片段`, 'success');
+                } catch (e) {
+                    UIController.showToast('批量删除失败', 'error');
+                }
+            },
+
+            openNewChunkModal() {
+                this.editingChunkId = null;
+                const title = document.getElementById('chunk-modal-title');
+                const content = document.getElementById('chunk-modal-content');
+                const task = document.getElementById('chunk-modal-task');
+                const fill = document.getElementById('chunk-modal-fill');
+                const status = document.getElementById('chunk-modal-status');
+                const modal = document.getElementById('chunk-modal');
+                const confirmBtn = document.getElementById('chunk-modal-confirm');
+                if (title) title.innerText = '新建片段';
+                if (content) content.value = '';
+                if (task) task.style.display = 'none';
+                if (fill) fill.style.width = '0%';
+                if (status) status.innerText = '';
+                if (confirmBtn) confirmBtn.disabled = false;
+                if (modal) modal.style.display = 'flex';
+            },
+
+            openEditModal(chunkId) {
+                const chunk = State.chunks.find((c) => c.id === chunkId);
+                if (!chunk) return;
+                this.editingChunkId = chunkId;
+                const title = document.getElementById('chunk-modal-title');
+                const content = document.getElementById('chunk-modal-content');
+                const task = document.getElementById('chunk-modal-task');
+                const fill = document.getElementById('chunk-modal-fill');
+                const status = document.getElementById('chunk-modal-status');
+                const modal = document.getElementById('chunk-modal');
+                const confirmBtn = document.getElementById('chunk-modal-confirm');
+                if (title) title.innerText = '编辑片段';
+                if (content) content.value = chunk.content || '';
+                if (task) task.style.display = 'none';
+                if (fill) fill.style.width = '0%';
+                if (status) status.innerText = '';
+                if (confirmBtn) confirmBtn.disabled = false;
+                if (modal) modal.style.display = 'flex';
+            },
+
+            closeModal() {
+                const modal = document.getElementById('chunk-modal');
+                const confirmBtn = document.getElementById('chunk-modal-confirm');
+                if (modal) modal.style.display = 'none';
+                if (confirmBtn) confirmBtn.disabled = false;
+                this.editingChunkId = null;
+            },
+
+            async confirmModal() {
+                const contentEl = document.getElementById('chunk-modal-content');
+                const confirmBtn = document.getElementById('chunk-modal-confirm');
+                const taskWrap = document.getElementById('chunk-modal-task');
+                const fillEl = document.getElementById('chunk-modal-fill');
+                const statusEl = document.getElementById('chunk-modal-status');
+                const content = String(contentEl?.value || '').trim();
+                if (!content) {
+                    UIController.showToast('内容不能为空', 'error');
+                    return;
+                }
+                if (confirmBtn) confirmBtn.disabled = true;
+
+                try {
+                    // Demo 模式：不实际调用 API
+                    this.closeModal();
+                    await this.loadChunks();
+                    await DocumentManager.loadDocs();
+                    await KBManager.refresh();
+                } catch (e) {
+                    UIController.showToast('保存失败', 'error');
+                    if (confirmBtn) confirmBtn.disabled = false;
+                }
+            },
+        };
+
+        // 仅追加扩展逻辑，不改原函数实现：切换报告库时自动退出 chunk 视图。
+        const _origInitForKB = DocumentManager.initForKB.bind(DocumentManager);
+        DocumentManager.initForKB = function wrappedInitForKB(kbId) {
+            State.activeDocId = null;
+            State.activeDocName = '';
+            const chunkContainer = document.getElementById('chunk-container');
+            if (chunkContainer) chunkContainer.style.display = 'none';
+            return _origInitForKB(kbId);
+        };
+
+        // ========== Demo 模式：拦截 API 操作 ==========
+        const _showDemoToast = (msg = 'Demo 模式：此功能不可用') => {
+            UIController.showToast(msg, 'info');
+        };
+
+        // 1. 文档删除
+        const _origDeleteDoc = DocumentManager.deleteDoc.bind(DocumentManager);
+        DocumentManager.deleteDoc = async (docId) => {
+            _showDemoToast('Demo 模式：文档删除功能不可用');
+        };
+
+        // 2. 文档启用/停用
+        const _origToggleStatus = DocumentManager.toggleStatus.bind(DocumentManager);
+        DocumentManager.toggleStatus = async (docId, isActive) => {
+            _showDemoToast('Demo 模式：文档启用/停用功能不可用');
+        };
+
+        // 3. 文档上传
+        const _origHandleModalConfirm = UIController.handleModalConfirm.bind(UIController);
+        UIController.handleModalConfirm = async () => {
+            _showDemoToast('Demo 模式：文档上传功能不可用');
+        };
+
+        // 3.1 东方财富爬取
+        const _origStartCrawler = UIController.startCrawler.bind(UIController);
+        UIController.startCrawler = async () => {
+            _showDemoToast('Demo 模式：研报爬取功能不可用');
+        };
+
+        // 4. 分块编辑
+        const _origSaveChunkEdit = ChunkManager.saveChunkEdit.bind(ChunkManager);
+        ChunkManager.saveChunkEdit = async (chunkId, content) => {
+            _showDemoToast('Demo 模式：分块编辑功能不可用');
+        };
+
+        // 5. 分块删除
+        const _origDeleteChunk = ChunkManager.deleteChunk.bind(ChunkManager);
+        ChunkManager.deleteChunk = async (chunkId) => {
+            _showDemoToast('Demo 模式：分块删除功能不可用');
+        };
+
+        // 6. 分块启用/停用
+        const _origToggleChunkStatus = ChunkManager.toggleChunkStatus.bind(ChunkManager);
+        ChunkManager.toggleChunkStatus = async (chunkId, isActive) => {
+            _showDemoToast('Demo 模式：分块启用/停用功能不可用');
+        };
+
+        // 7. 批量删除分块
+        const _origBatchDelete = ChunkManager.batchDelete.bind(ChunkManager);
+        ChunkManager.batchDelete = async () => {
+            _showDemoToast('Demo 模式：批量删除功能不可用');
+        };
+
+        // 8. 文档同步
+        const _origSyncDoc = DocumentManager.syncDoc.bind(DocumentManager);
+        DocumentManager.syncDoc = async (docId) => {
+            _showDemoToast('Demo 模式：文档同步功能不可用');
+        };
+
+        // 9. 分块上传
+        const _origUploadChunks = ChunkManager.uploadChunks.bind(ChunkManager);
+        ChunkManager.uploadChunks = async () => {
+            _showDemoToast('Demo 模式：分块上传功能不可用');
+        };
+
+        // 10. 意图树加载（返回空数组，不调用后端）
+        const _origGetIntentTree = Api.getIntentTree.bind(Api);
+        Api.getIntentTree = async () => {
+            return [];
+        };
+
+        // 11. 文档上传轮询（拦截上传后的任务轮询）
+        const _origGetTaskStatus = Api.getTaskStatus.bind(Api);
+        Api.getTaskStatus = async (taskId) => {
+            _showDemoToast('Demo 模式：任务查询功能不可用');
+            return { status: 'failed', progress: 0 };
+        };
+
+        // 12. 重试同步
+        const _origRetrySync = DocumentManager.retrySync.bind(DocumentManager);
+        DocumentManager.retrySync = async (docId) => {
+            _showDemoToast('Demo 模式：重试同步功能不可用');
+        };
+
+    </script>
+</body>
+</html>
