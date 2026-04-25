@@ -1284,11 +1284,8 @@
                 this.rightPanel.classList.add('collapsed');
             },
             async handleSend() {
-                const text = this.inputEl.value.trim();
-                if ((!text && !this.pendingImage) || StreamHandler.isStreaming) return;
-                await this.sendQuestion(text);
-                this.inputEl.value = '';
-                this.inputEl.style.height = 'auto';
+                // Demo 模式：提示用户暂不支持对话
+                showToast('Demo 暂不支持回复', 'info');
             },
             async sendQuestion(text) {
                 if (!SessionManager.currentSessionId) {
