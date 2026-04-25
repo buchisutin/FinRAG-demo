@@ -9,7 +9,7 @@
   "routes": [
     {
       "src": "/",
-      "dest": "/knowledge.html"
+      "dest": "/chat/index.html"
     },
     {
       "src": "/chat/?",
