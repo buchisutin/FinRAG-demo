@@ -518,9 +518,9 @@
                 <span id="chunk-modal-title" style="font-size:14px; font-weight:500; color:var(--text-primary);">查看片段</span>
                 <button onclick="closeChunkModal()" style="color:var(--text-muted); background:none; border:none; cursor:pointer;">✕</button>
             </div>
-            <div style="padding:20px 24px;">
+            <div style="padding:20px 24px; overflow-y:auto;">
                 <label style="font-size:12px; font-weight:500; color:var(--text-secondary); display:block; margin-bottom:8px;">片段内容</label>
-                <textarea id="chunk-modal-content" style="width:100%; min-height:200px; background:var(--bg-app); border:0.5px solid var(--border); border-radius:8px; padding:10px 12px; font-size:13px; color:var(--text-primary); line-height:1.7; resize:vertical; pointer-events:none;"></textarea>
+                <div id="chunk-modal-content" style="width:100%; min-height:200px; max-height:50vh; overflow-y:auto; background:var(--bg-app); border:0.5px solid var(--border); border-radius:8px; padding:10px 12px; font-size:13px; color:var(--text-primary); line-height:1.7; white-space:pre-wrap; word-break:break-word;"></div>
                 <div id="chunk-modal-task" style="display:none; margin-top:12px;">
                     <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">向量化进度</div>
                     <div style="height:4px; background:var(--border-subtle); border-radius:2px; overflow:hidden;">
@@ -547,7 +547,7 @@
         function openChunkModal(content) {
             const modal = document.getElementById('chunk-modal');
             const contentEl = document.getElementById('chunk-modal-content');
-            if (contentEl) contentEl.value = content || '';
+            if (contentEl) contentEl.innerText = content || '';
             if (modal) modal.style.display = 'flex';
         }
 
@@ -619,6 +619,17 @@
             const date = new Date(value);
             if (Number.isNaN(date.getTime())) return value;
             return date.toLocaleString();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function cleanPreview(text) {
+            if (!text) return '';
+            return text.replace(/<[^>]*>/g, '');
         }
 
         function formatListTime(value) {
@@ -1213,7 +1224,7 @@
                         const fallbackName = String(c.file || '-').split('/').pop().split('\\').pop();
                         const displayName = String(c.display_name || fallbackName || '-');
                         return `
-                        <div class="chunk-card" data-content="${c.content || c.preview || ''}">
+                        <div class="chunk-card" data-content="${escapeHtml(c.content || c.preview || '')}">
                             <div class="chunk-header">
                                 <div class="chunk-file" title="${c.file}">${displayName}</div>
                             </div>
@@ -1221,7 +1232,7 @@
                                 <span class="score-item">RR: ${c.rerank_score.toFixed(3)}</span>
                                 <span class="score-item text-muted">Ori: ${c.origin_score.toFixed(3)}</span>
                             </div>
-                            <div class="chunk-preview">${c.preview}</div>
+                            <div class="chunk-preview">${escapeHtml(cleanPreview(c.preview))}</div>
                         </div>
                     `;
                     }).join('');
