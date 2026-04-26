@@ -2,6 +2,8 @@
 
 > 基于东方财富研报数据库的智能问答系统 - 纯静态前端演示
 
+在线预览: https://fin-rag-demo.vercel.app
+
 ## 技术栈
 
 - **HTML5 / CSS3 / ES6+ JavaScript**
@@ -11,15 +13,18 @@
 ## 页面结构
 
 ```
-frontend/
 ├── chat/
 │   └── index.html      # 对话页面 - 支持多会话切换、Markdown 渲染
 ├── knowledge.html      # 知识管理 - 行业报告库、文档分块浏览
 ├── tracing.html        # 链路追踪 - 查询性能分析、缓存命中展示
 ├── mock_traces.json    # 链路追踪 mock 数据源
+├── vercel.json         # Vercel 部署配置
+├── README.md           # 项目说明
+├── favicon.svg         # 网站图标
 └── assets/
     ├── shell.js        # 侧边栏导航、全局 UI 组件
-    └── shell.css       # 全局样式
+    ├── shell.css       # 全局样式
+    └── api.js          # API 请求封装
 ```
 
 ## 快速开始
@@ -27,27 +32,34 @@ frontend/
 ### 方式一：Python 内置服务器
 
 ```bash
-cd rag_project_demo/frontend
+cd rag_project_demo
 python3 -m http.server 8080
 ```
 
-访问 http://localhost:8080/knowledge.html
+访问 http://localhost:8080 （首页默认显示对话页面）
 
-### 方式二：Nginx 部署（生产环境）
+### 方式二：Vercel 部署（推荐）
+
+```bash
+vercel
+```
+
+或在 Vercel 控制台导入此仓库，自动读取 `vercel.json` 配置。
+
+### 方式三：Nginx 部署（生产环境）
 
 ```nginx
 server {
     listen 80;
     server_name your-domain.com;
     
-    root /path/to/rag_project_demo/frontend;
-    index knowledge.html;
+    root /path/to/rag_project_demo;
+    index chat/index.html;
     
     location / {
         try_files $uri $uri/ =404;
     }
     
-    # MIME 类型支持
     include /etc/nginx/mime.types;
 }
 ```
@@ -86,6 +98,7 @@ server {
 - 调用瀑布图可视化
 - 缓存命中标识
 - 完整回答内容展示
+- 召回片段卡片展示
 
 **数据源**: `mock_traces.json` - 编辑此文件即可更新追踪数据
 
@@ -125,6 +138,7 @@ server {
 本 demo 为**纯前端展示版本**，所有 API 调用均已拦截：
 
 - 点击删除、上传、编辑等按钮会提示"Demo 模式：此功能不可用"
+- 用户发送消息时提示"Demo 暂不支持回复"
 - 健康状态显示"Demo 模式"
 - API Key 显示"Demo"
 
@@ -140,11 +154,11 @@ server {
 
 | 类型 | 大小 |
 |------|------|
-| HTML（3个页面） | ~274 KB |
+| HTML（3个页面） | ~280 KB |
 | CSS | ~8 KB |
 | JS | ~7 KB |
 | JSON（mock数据） | ~20 KB |
-| 总计 | ~310 KB |
+| 总计 | ~315 KB |
 
 ## License
 
