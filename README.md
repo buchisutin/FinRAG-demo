@@ -1,165 +1,99 @@
-# RAG 前端 Demo
+# FinRAG Frontend Demo
 
-> 基于东方财富研报数据库的智能问答系统 - 纯静态前端演示
+> 金融研报智能问答系统 · 前端演示层
 
-在线预览: https://fin-rag-demo.vercel.app
+![License](https://img.shields.io/badge/license-MIT-green)
+![Stack](https://img.shields.io/badge/stack-Vanilla%20JS%20%2F%20HTML%20%2F%20CSS-blue)
+![Deploy](https://img.shields.io/badge/deploy-Vercel-black)
 
-## 技术栈
+**本仓库为纯前端演示层**，用于在线展示产品交互流程。完整全栈实现（RAG Pipeline、向量检索、LLM 调用）请见：
 
-- **HTML5 / CSS3 / ES6+ JavaScript**
-- 零框架、零构建工具、零后端依赖
-- 纯静态文件，开箱即用
+👉 **[FinRAG 主仓库（后端 + 完整系统）](https://github.com/buchisutin/FinRAG-demo)**
+
+---
+
+![对话页面1](./assets/screenshot-chat-1.png)
+![对话页面2](./assets/screenshot-chat-2.png)
+![知识管理](./assets/screenshot-knowledge.png)
+![链路追踪1](./assets/screenshot-tracing-1.png)
+![链路追踪2](./assets/screenshot-tracing-2.png)
+
+🔗 **[在线 Demo](https://fin-rag-demo.vercel.app)**
+
+---
+
+## 项目背景
+
+[FinRAG 主仓库](https://github.com/buchisutin/FinRAG-demo) 实现了一套完整的金融研报 RAG 系统，涵盖文档解析、向量入库、混合检索、Rerank、LLM 生成和链路追踪。
+
+本仓库为该系统的**前端演示层**，包含对话、知识库、链路追踪三个核心页面，采用 mock 数据进行演示。
+
+---
+
+## 技术亮点
+
+- **零构建依赖**：无框架、无 npm 依赖，纯 HTML / CSS / ES6+，冷启动 < 1s
+- **链路追踪可视化**：基于 span 时间戳手动计算偏移量，用纯 CSS 渲染调用瀑布图，直观展示 Embedding → Retrieval → Rerank → LLM 各阶段耗时
+- **多会话状态管理**：事件驱动架构，支持会话创建、切换、删除，状态与 UI 完全解耦
+- **组件化设计**：公共侧边栏、导航、自定义 Select 抽取为独立模块 (`shell.js / shell.css`)，多页面复用零重复代码
+- **数据驱动**：演示数据通过外部 `mock_traces.json` 驱动，支持不修改代码的数据更新
+
+---
 
 ## 页面结构
 
 ```
+frontend/
 ├── chat/
-│   └── index.html      # 对话页面 - 支持多会话切换、Markdown 渲染
-├── knowledge.html      # 知识管理 - 行业报告库、文档分块浏览
-├── tracing.html        # 链路追踪 - 查询性能分析、缓存命中展示
-├── mock_traces.json    # 链路追踪 mock 数据源
-├── vercel.json         # Vercel 部署配置
-├── README.md           # 项目说明
-├── favicon.svg         # 网站图标
+│   └── index.html          # 对话界面：多会话管理、Markdown 渲染、样例问题
+├── knowledge.html          # 知识库管理：行业报告库、文档分块浏览与筛选
+├── tracing.html            # 链路追踪：调用瀑布图、缓存命中、性能分析
+├── mock_traces.json        # 追踪数据源（编辑此文件即可更新演示数据）
+├── favicon.svg             # 网站图标
 └── assets/
-    ├── shell.js        # 侧边栏导航、全局 UI 组件
-    ├── shell.css       # 全局样式
-    └── api.js          # API 请求封装
+    ├── shell.js            # 公共组件：侧边栏、导航、自定义 Select
+    ├── shell.css           # 全局样式系统（CSS 变量 + 组件库）
+    └── api.js              # 数据加载工具
 ```
 
-## 快速开始
-
-### 方式一：Python 内置服务器
-
-```bash
-cd rag_project_demo
-python3 -m http.server 8080
-```
-
-访问 http://localhost:8080 （首页默认显示对话页面）
-
-### 方式二：Vercel 部署（推荐）
-
-```bash
-vercel
-```
-
-或在 Vercel 控制台导入此仓库，自动读取 `vercel.json` 配置。
-
-### 方式三：Nginx 部署（生产环境）
-
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-    
-    root /path/to/rag_project_demo;
-    index chat/index.html;
-    
-    location / {
-        try_files $uri $uri/ =404;
-    }
-    
-    include /etc/nginx/mime.types;
-}
-```
+---
 
 ## 功能说明
 
-### 1. 对话页面 (`/chat/index.html`)
-
-- 支持多会话管理（创建、重命名、删除）
+### 💬 对话页面 `/chat/index.html`
+- 多会话管理：创建、切换、删除对话
 - Markdown 格式回答渲染
-- 样例问题快捷提问
-- 新建对话展示欢迎页面
+- 样例问题快捷入口
 
-**Mock 数据**: 包含 3 个行业研报对话示例
-- 计算机行业 Token 暴增趋势分析
-- 3月挖掘机销量数据讨论
-- 26年3月社零数据讨论
+### 📚 知识库管理 `/knowledge.html`
+- 五大行业分类：科技 / 医药 / 新能源 / 金融 / 消费
+- 文档列表浏览 + 分块详情查看
+- 分块状态筛选 + 分页
 
-### 2. 知识管理 (`/knowledge.html`)
-
-- 五大行业报告库（科技/医药/新能源/金融/消费）
-- 文档列表查看、分块详情浏览
-- 分块状态筛选（全部/已启用/已停用）
-- 分块分页浏览
-
-**Mock 数据**: 包含 5 篇行业研报文档
-- 计算机行业周报-Token暴增推动估值重构
-- 工程机械行业跟踪点评-3月挖机销量
-- 商贸零售-26年3月社零数据如何
-- 医药生物行业周报-分级诊疗体系
-- 非银金融-资本市场聚焦
-
-### 3. 链路追踪 (`/tracing.html`)
-
-- 查询记录列表（支持搜索、筛选）
-- 调用瀑布图可视化
+### 🔍 链路追踪 `/tracing.html`
+- 调用瀑布图：可视化各阶段耗时
 - 缓存命中标识
-- 完整回答内容展示
-- 召回片段卡片展示
+- 查询记录搜索与筛选
 
-**数据源**: `mock_traces.json` - 编辑此文件即可更新追踪数据
+---
 
-## 数据管理
+## 快速开始
 
-### 修改追踪数据
+### 本地预览
 
-编辑 `mock_traces.json` 文件，格式如下：
-
-```json
-{
-  "traces": [
-    {
-      "id": "tr_xxx",
-      "question": "用户问题",
-      "answer": "AI 回答内容（支持 Markdown）",
-      "total_latency_ms": 7309,
-      "cache_hit": true,
-      "spans": [...]
-    }
-  ]
-}
+```bash
+python3 -m http.server 8080
 ```
 
-刷新页面即可生效，无需修改任何 HTML 代码。
+打开浏览器访问：
+- **对话页面**：http://localhost:8080/chat/
+- **知识库**：http://localhost:8080/knowledge.html
+- **链路追踪**：http://localhost:8080/tracing.html
 
-### 修改对话数据
+> ⚠️ 必须通过 HTTP 服务器访问。直接双击 HTML 文件会因跨域限制导致 JSON 加载失败。
 
-编辑 `chat/index.html` 中的 `MOCK_SESSIONS` 和 `MOCK_MESSAGES_MAP` 变量。
-
-### 修改知识库数据
-
-编辑 `knowledge.html` 中的 `MOCK_DOCS` 和 `MOCK_CHUNKS` 变量。
-
-## Demo 模式说明
-
-本 demo 为**纯前端展示版本**，所有 API 调用均已拦截：
-
-- 点击删除、上传、编辑等按钮会提示"Demo 模式：此功能不可用"
-- 用户发送消息时提示"Demo 暂不支持回复"
-- 健康状态显示"Demo 模式"
-- API Key 显示"Demo"
-
-如需接入真实后端，请参考 `rag_project/` 目录中的完整版本。
-
-## 注意事项
-
-1. **浏览器兼容**: 建议使用 Chrome/Edge/Safari 等现代浏览器
-2. **跨域问题**: 本地文件访问时建议使用 HTTP 服务器而非直接双击打开
-3. **数据来源**: Demo 中的研报数据来自东方财富网站，仅用于技术演示和学习目的
-
-## 文件体积
-
-| 类型 | 大小 |
-|------|------|
-| HTML（3个页面） | ~280 KB |
-| CSS | ~8 KB |
-| JS | ~7 KB |
-| JSON（mock数据） | ~20 KB |
-| 总计 | ~315 KB |
+---
 
 ## License
 
-仅供内部演示与学习使用。
+MIT
